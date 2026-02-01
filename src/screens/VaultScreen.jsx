@@ -262,6 +262,7 @@ const VaultScreen = () => {
         onClose={() => setSelectedCredential(null)}
         onUpdate={handleUpdate}
         onDeleteSuccess={handleDeleteSuccess}
+        isOfflineMode={isOfflineMode}
       />
 
       <AddCredentialModal

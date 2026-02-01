@@ -1,15 +1,25 @@
 import api from './api';
 import { syncService } from './db';
+import NetInfo from '@react-native-community/netinfo';
 
 /**
  * Guarda o Actualiza una credencial
  */
+const revisarConexion = async () => {
+  const state = await NetInfo.fetch();
+  return state.isConnected; // Ahora sí devuelve true/false
+};
+
 export const saveCredential = async (credential) => {
   try {
     const isUpdate = !!credential.id;
     let response;
 
     if (isUpdate) {
+      if (await revisarConexion()) {
+        return;
+      }
+
       const { id, offline, ...payload } = credential;
       response = await api.put(`/api/credentials/${id}`, payload);
       console.log('Actualización exitosa en la API');
@@ -38,6 +48,10 @@ export const saveCredential = async (credential) => {
  * Elimina una credencial
  */
 export const deleteCredential = async (id) => {
+  if (await revisarConexion()) {
+    return;
+  }
+
   try {
     await api.delete(`/api/credentials/${id}`);
     console.log('Eliminación exitosa en la API');
