@@ -25,7 +25,7 @@ api.interceptors.request.use(
     try {
       // USAR SecureStore (igual que en el Login)
       const token = await SecureStore.getItemAsync('userToken'); 
-      
+      console.log("Token recibido en interceptor:", token);
       if (token) {
         // Asegúrate de que no haya espacios extra o falte "Bearer "
         config.headers.Authorization = `Bearer ${token}`;

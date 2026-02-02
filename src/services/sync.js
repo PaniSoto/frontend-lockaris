@@ -7,7 +7,8 @@ import NetInfo from '@react-native-community/netinfo';
  */
 const revisarConexion = async () => {
   const state = await NetInfo.fetch();
-  return state.isConnected; // Ahora sí devuelve true/false
+  console.log('Estado de la conexión:', state);
+  return state.isInternetReachable; // Ahora sí devuelve true/false
 };
 
 export const saveCredential = async (credential) => {
@@ -16,16 +17,21 @@ export const saveCredential = async (credential) => {
     let response;
 
     if (isUpdate) {
-      if (await revisarConexion()) {
+      if (!await revisarConexion()) {
+        //Cuando quito estas tres lineas da error
+
         return;
       }
-
       const { id, offline, ...payload } = credential;
-      response = await api.put(`/api/credentials/${id}`, payload);
+      console.log('la credencial:', credential);
+      response = await api.put(`/api/credentials/${id}`, payload); //aqui no llega el id
+      console.log('Llamando a PUT en:', `/api/credentials/${id}`);
       console.log('Actualización exitosa en la API');
     } else {
       const { offline, ...payload } = credential;
+      console.log('credencial al crearse', credential);
       response = await api.post('/api/credentials', payload);
+      console.log("Respuesta de creación:", response.data);
       console.log('Creación exitosa en la API');
     }
 

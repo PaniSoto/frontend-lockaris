@@ -39,9 +39,11 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
       });
 
       const { token, user } = response.data;
+      console.log("Token recibido del login:", token);
       await SecureStore.setItemAsync('userToken', token);
       authService.setSession(user);
       onLoginSuccess();
+
     } catch (err) {
       const msg = err.response?.data?.error || 'Correo o contraseña incorrectos';
       setError(msg);

@@ -100,7 +100,14 @@ const VaultScreen = () => {
     setCredentials((prev) => [newItem, ...prev]); //esto guarda en la lista inmediatamente
 
     try {
-      await saveCredential({ ...formData, type: itemType }); //esto guarda en la api y si no tiene conección en sqlite
+       const state = await NetInfo.fetch();
+       if(state.isConnected){
+        await saveCredential({ ...formData, type: itemType });
+        fetchCredentials(true);
+       }else{
+        await saveCredential({ ...formData, type: itemType });
+       }
+      //await saveCredential({ ...formData, type: itemType }); //esto guarda en la api y si no tiene conección en sqlite
       //fetchCredentials(true); // Refrescar para obtener el ID real y datos actualizados
     } catch (error) {
       Alert.alert('Error', 'No se pudo crear localmente.');
@@ -123,6 +130,8 @@ const VaultScreen = () => {
     }
   };
 
+
+  
   const deletedIdsRef = useRef(new Set());
   const handleDeleteSuccess = (deletedId) => {
     // 1. Quitar de la vista al instante
