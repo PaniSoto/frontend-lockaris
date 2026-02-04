@@ -54,7 +54,7 @@ export const saveCredential = async (credential) => {
  * Elimina una credencial
  */
 export const deleteCredential = async (id) => {
-  if (await revisarConexion()) {
+  if (!await revisarConexion()) {
     return;
   }
 

@@ -38,7 +38,7 @@ export const initDB = () => {
     );
   `);
 
-  // NUEVA: Tabla de Sincronización Pendiente
+  // Tabla de Sincronización Pendiente
   db.execSync(`
     CREATE TABLE IF NOT EXISTS pending_sync (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +51,6 @@ export const initDB = () => {
 
 // 3. Servicio de Datos y Sincronización
 export const syncService = {
-  // Guarda lo que viene de la nube (limpia y reescribe)
   saveCredentialsFromCloud: (credentialsArray) => {
     db.withTransactionSync(() => {
       db.runSync('DELETE FROM credentials'); 
@@ -80,7 +79,6 @@ export const syncService = {
     return db.getAllSync('SELECT * FROM credentials ORDER BY serviceName ASC');
   },
 
-  // --- LÓGICA OFFLINE ---
   queueAction: (data, action) => {
     db.runSync(
       'INSERT INTO pending_sync (data, action, timestamp) VALUES (?, ?, ?)',
@@ -97,8 +95,9 @@ export const syncService = {
   }
 };
 
-// 4. Servicio de Autenticación
+// 4. Servicio de Autenticación (ACTUALIZADO)
 export const authService = {
+  // Guarda el usuario en SQLite al iniciar sesión
   setSession: (user) => {
     db.runSync('DELETE FROM users');
     db.runSync(
@@ -106,7 +105,38 @@ export const authService = {
       [user.id, user.name, user.email, new Date().toISOString()]
     );
   },
-  getCurrentUser: () => db.getFirstSync('SELECT * FROM users'),
+
+  // Obtiene los datos del usuario desde SQLite (Síncrono)
+  getCurrentUser: () => {
+    return db.getFirstSync('SELECT * FROM users');
+  },
+
+  // Actualizar perfil localmente (Usado en SettingsPage)
+  updateUser: (id, name, email) => {
+    try {
+      db.runSync(
+        'UPDATE users SET name = ?, email = ? WHERE id = ?',
+        [name, email, id]
+      );
+      // Retornamos el usuario recién actualizado para refrescar el estado inmediatamente
+      return db.getFirstSync('SELECT * FROM users WHERE id = ?', [id]);
+    } catch (error) {
+      console.error("Error en SQLite updateUser:", error);
+      throw error;
+    }
+  },
+
+  // Obtener Token para llamadas API (Async usando SecureStore)
+  getToken: async () => {
+    return await SecureStore.getItemAsync('userToken');
+  },
+
+  // Guardar Token manualmente si es necesario
+  saveToken: async (token) => {
+    await SecureStore.setItemAsync('userToken', token);
+  },
+
+  // Limpieza total al salir
   logout: async () => {
     db.runSync('DELETE FROM users');
     db.runSync('DELETE FROM credentials'); 

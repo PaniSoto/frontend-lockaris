@@ -50,7 +50,12 @@ const VaultScreen = () => {
 
         // 4. EL FILTRO MAESTRO:
         // Si la nube me manda algo que yo SÉ que he borrado, lo ignoro.
-        const cloudData = response.data.filter((item) => !deletedIdsRef.current.has(item.id));
+        // const cloudData = response.data.filter((item) => !deletedIdsRef.current.has(item.id));
+        const cloudData = response.data
+          .filter((item) => !deletedIdsRef.current.has(item.id))
+          .sort((a, b) => 
+            (a.serviceName || "").localeCompare(b.serviceName || "", undefined, { sensitivity: 'base' })
+          );
 
         // 5. Guardar en SQLite y actualizar pantalla con la lista limpia
         syncService.saveCredentialsFromCloud(cloudData);
@@ -100,13 +105,13 @@ const VaultScreen = () => {
     setCredentials((prev) => [newItem, ...prev]); //esto guarda en la lista inmediatamente
 
     try {
-       const state = await NetInfo.fetch();
-       if(state.isConnected){
+      const state = await NetInfo.fetch();
+      if (state.isConnected) {
         await saveCredential({ ...formData, type: itemType });
         fetchCredentials(true);
-       }else{
+      } else {
         await saveCredential({ ...formData, type: itemType });
-       }
+      }
       //await saveCredential({ ...formData, type: itemType }); //esto guarda en la api y si no tiene conección en sqlite
       //fetchCredentials(true); // Refrescar para obtener el ID real y datos actualizados
     } catch (error) {
@@ -130,8 +135,6 @@ const VaultScreen = () => {
     }
   };
 
-
-  
   const deletedIdsRef = useRef(new Set());
   const handleDeleteSuccess = (deletedId) => {
     // 1. Quitar de la vista al instante

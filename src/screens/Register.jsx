@@ -17,6 +17,7 @@ const Register = ({ onBackToLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -55,7 +56,7 @@ const Register = ({ onBackToLogin }) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-slate-50">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, marginBottom: 50 }}>
         {/* Header - Identidad Lockaris */}
         <View className="mb-8 items-center">
           <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-300">
@@ -119,16 +120,32 @@ const Register = ({ onBackToLogin }) => {
                 Contraseña
               </Text>
               <View className="relative">
+                {/* Icono de candado a la izquierda */}
                 <View className="absolute top-[14px] left-4 z-10">
                   <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
                 </View>
+
                 <TextInput
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pr-4 pl-12 text-slate-700"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pr-12 pl-12 text-slate-700"
                   placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChangeText={setPassword}
-                  secureTextEntry
+                  secureTextEntry={!showPassword} // Cambia dinámicamente
+                  autoCapitalize="none"
                 />
+
+                {/* Botón del ojo a la derecha */}
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="absolute top-[14px] right-4 z-10"
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Mejora el área táctil
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
