@@ -2,7 +2,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+// Barra de pestañas en la parte inferior de la aplicación
 export default function TabLayout() {
+  // El uso de insets para evitar colisiones con el diseño físico del móvil
   const insets = useSafeAreaInsets();
 
   return (
@@ -13,8 +15,7 @@ export default function TabLayout() {
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: '#f1f5f9',
-          // Sumamos el espacio de seguridad (insets.bottom) a la altura base
-          height: 60 + (insets.bottom > 0 ? insets.bottom - 10 : 0), 
+          height: 60 + (insets.bottom > 0 ? insets.bottom - 10 : 0),
           paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
           paddingTop: 8,
           backgroundColor: '#ffffff',

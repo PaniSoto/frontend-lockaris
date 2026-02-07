@@ -13,7 +13,12 @@ export default function Index() {
   const [currentView, setCurrentView] = useState('login');
 
   useEffect(() => {
-    const prepareApp = async () => {
+    /**
+     * Tarea de preparación: Inicializa la infraestructura local
+     * y recupera la sesión guardada si existe.
+     */
+
+    const prepararAplicacion = async () => {
       try {
         // Inicializamos DB local
         await initDB();
@@ -26,10 +31,10 @@ export default function Index() {
         setIsLoading(false);
       }
     };
-    prepareApp();
+    prepararAplicacion();
   }, []);
 
-  const refreshSession = async () => {
+  const refrescarSesion = async () => {
     const token = await SecureStore.getItemAsync('userToken');
     setUserToken(token);
   };
@@ -44,17 +49,16 @@ export default function Index() {
 
   // --- LÓGICA DE REDIRECCIÓN ---
 
-  // Si tenemos token, saltamos directamente a la bóveda.
-  // Es vital que el href coincida con el nombre del archivo en app/(tabs)/vault.jsx
+  // Si el usuario ya está autenticado se le envía a la bóveda
   if (userToken) {
     return <Redirect href="/(tabs)/vault" />;
   }
 
   // --- FLUJO DE AUTENTICACIÓN ---
-
+  // Selección entre Login y Registro
   if (currentView === 'login') {
     return (
-      <Login onLoginSuccess={refreshSession} onGoToRegister={() => setCurrentView('register')} />
+      <Login onLoginSuccess={refrescarSesion} onGoToRegister={() => setCurrentView('register')} />
     );
   }
 

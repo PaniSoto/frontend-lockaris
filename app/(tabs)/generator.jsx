@@ -4,23 +4,27 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
 export default function GeneratorPage() {
+  // --- ESTADOS: Controlan las opciones de la contraseña y el resultado ---
   const [password, setPassword] = useState('P4ssw0rd!');
   const [length, setLength] = useState(12);
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSymbols, setIncludeSymbols] = useState(true);
   const [includeUppercase, setIncludeUppercase] = useState(true);
 
+  // --- LÓGICA PRINCIPAL: Construye el caracteresPermitidos y genera el string aleatorio ---
   const generatePassword = () => {
-    let charset = 'abcdefghijklmnopqrstuvwxyz';
-    if (includeUppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if (includeNumbers) charset += '0123456789';
-    if (includeSymbols) charset += '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+    let caracteresPermitidos = 'abcdefghijklmnopqrstuvwxyz';
+    if (includeUppercase) caracteresPermitidos += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if (includeNumbers) caracteresPermitidos += '0123456789';
+    if (includeSymbols) caracteresPermitidos += '!@#$%^&*()_+~`|}{[]:;?><,./-=';
 
-    let newPassword = '';
+    let nuevaContraseña = '';
     for (let i = 0; i < length; i++) {
-      newPassword += charset.charAt(Math.floor(Math.random() * charset.length));
+      nuevaContraseña += caracteresPermitidos.charAt(
+        Math.floor(Math.random() * caracteresPermitidos.length)
+      );
     }
-    setPassword(newPassword);
+    setPassword(nuevaContraseña);
   };
 
   const copyToClipboard = async () => {
@@ -30,43 +34,49 @@ export default function GeneratorPage() {
 
   return (
     <ScrollView className="flex-1 bg-slate-50">
+      {/* ENCABEZADO */}
       <View className="px-6 pt-16 pb-8">
         <Text className="text-3xl font-bold text-slate-900">Generador</Text>
         <Text className="mt-1 text-slate-500">Crea contraseñas ultra seguras</Text>
       </View>
 
       <View className="px-6">
-        {/* Contraseña generada */}
+        {/* VISTA DE LA CONTRASEÑA GENERADA */}
         <View className="mb-6 items-center rounded-[30px] border border-slate-100 bg-white p-6 shadow-sm">
           <Text className="mb-4 text-center font-mono text-2xl text-blue-600">{password}</Text>
           <View className="flex-row gap-x-4">
-            <TouchableOpacity onPress={generatePassword} className="rounded-full bg-blue-50 p-3">
-              <Ionicons name="refresh" size={24} color="#3b82f6" />
-            </TouchableOpacity>
             <TouchableOpacity onPress={copyToClipboard} className="rounded-full bg-blue-600 p-3">
               <Ionicons name="copy-outline" size={24} color="white" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Opciones de configuración */}
+        {/* PANEL DE CONFIGURACIÓN */}
         <View className="gap-y-6 rounded-[30px] border border-slate-100 bg-white p-6 shadow-sm">
           <Text className="mb-2 text-lg font-bold text-slate-900">Configuración</Text>
 
-          <OptionRow
+          <FilaSelectorNumero
             label="Longitud"
             value={length}
             onPlus={() => setLength((l) => Math.min(32, l + 1))}
             onMinus={() => setLength((l) => Math.max(8, l - 1))}
           />
 
-          <ToggleRow
+          <FilaInterruptor
             label="Mayúsculas"
             value={includeUppercase}
             onValueChange={setIncludeUppercase}
           />
-          <ToggleRow label="Números" value={includeNumbers} onValueChange={setIncludeNumbers} />
-          <ToggleRow label="Símbolos" value={includeSymbols} onValueChange={setIncludeSymbols} />
+          <FilaInterruptor
+            label="Números"
+            value={includeNumbers}
+            onValueChange={setIncludeNumbers}
+          />
+          <FilaInterruptor
+            label="Símbolos"
+            value={includeSymbols}
+            onValueChange={setIncludeSymbols}
+          />
         </View>
 
         <TouchableOpacity
@@ -79,8 +89,10 @@ export default function GeneratorPage() {
   );
 }
 
-// Componentes auxiliares para no repetir código
-const ToggleRow = ({ label, value, onValueChange }) => (
+/* COMPONENTES AUXILIARES */
+
+// Fila con Switch para activar/desactivar opciones
+const FilaInterruptor = ({ label, value, onValueChange }) => (
   <View className="flex-row items-center justify-between">
     <Text className="font-medium text-slate-700">{label}</Text>
     <Switch
@@ -92,7 +104,8 @@ const ToggleRow = ({ label, value, onValueChange }) => (
   </View>
 );
 
-const OptionRow = ({ label, value, onPlus, onMinus }) => (
+// Fila con botones +/- para controlar la longitud numérica
+const FilaSelectorNumero = ({ label, value, onPlus, onMinus }) => (
   <View className="flex-row items-center justify-between">
     <Text className="font-medium text-slate-700">{label}</Text>
     <View className="flex-row items-center gap-x-4">

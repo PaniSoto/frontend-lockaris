@@ -14,13 +14,14 @@ export default function ViewCredentialModal({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
-  const [showSensitive, setShowSensitive] = useState({}); 
+  const [showSensitive, setShowSensitive] = useState({});
   const [copiedField, setCopiedField] = useState(null);
 
+  // Sincroniza el formulario interno cuando se abre el modal con nuevos datos
   useEffect(() => {
     if (isOpen && data) {
       setEditForm({ ...data });
-      setShowSensitive({}); 
+      setShowSensitive({});
     }
     if (!isOpen) {
       setIsEditing(false);
@@ -30,21 +31,24 @@ export default function ViewCredentialModal({
   if (!isOpen || !data) return null;
 
   const theme = {
-    bg: isOfflineMode ? 'bg-gray-400' : 
-        data.type === 'CARD' ? 'bg-emerald-600' : 
-        data.type === 'NOTE' ? 'bg-amber-600' : 'bg-blue-600',
+    bg: isOfflineMode
+      ? 'bg-gray-400'
+      : data.type === 'CARD'
+        ? 'bg-emerald-600'
+        : data.type === 'NOTE'
+          ? 'bg-amber-600'
+          : 'bg-blue-600',
   };
 
-  // Lógica de generación aleatoria adaptada
+  // Lógica de generación aleatoria
   const handleGeneratePassword = () => {
     const length = 16;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-    let newPassword = "";
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+    let newPassword = '';
     for (let i = 0; i < length; i++) {
       newPassword += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     setEditForm((prev) => ({ ...prev, password: newPassword }));
-    // Forzamos que se vea la contraseña al generarla
     setShowSensitive((prev) => ({ ...prev, password: true }));
   };
 
@@ -55,12 +59,53 @@ export default function ViewCredentialModal({
     setIsEditing(false);
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      '¿Eliminar esta información?',
+      'Esta acción no se puede deshacer. Si estás sin conexión, se eliminará permanentemente al sincronizar.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await deleteCredential(data.id);
+              if (result) {
+                onClose();
+
+                if (onDeleteSuccess) onDeleteSuccess(data.id);
+
+                if (result.offline) {
+                  Alert.alert(
+                    'Modo Offline',
+                    'Se eliminará del servidor automáticamente cuando tengas red.'
+                  );
+                }
+              }
+            } catch (error) {
+              console.error('Error al eliminar la credencial:', error);
+              Alert.alert('Error', 'No se pudo eliminar la credencial.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const toggleVisibility = (key) => {
     setShowSensitive((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // RenderField ahora acepta 'extraAction' para el botón de shuffle
-  const renderField = (label, key, secure = false, multiline = false, canCopy = false, extraAction = null) => (
+  // Función auxiliar para crear filas de datos uniformes
+  const renderField = (
+    label,
+    key,
+    secure = false,
+    multiline = false,
+    canCopy = false,
+    extraAction = null
+  ) => (
     <View className="mb-4">
       <Text className="mb-1 ml-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
         {label}
@@ -76,9 +121,9 @@ export default function ViewCredentialModal({
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
         />
-        
-        <View className="flex-row items-center gap-x-3">
 
+        <View className="flex-row items-center gap-x-3">
+          {/* Botón para copiar */}
           {editForm[key] && canCopy && (
             <TouchableOpacity
               onPress={() => {
@@ -93,13 +138,13 @@ export default function ViewCredentialModal({
               />
             </TouchableOpacity>
           )}
-          {/* BOTÓN ALEATORIO (Solo si estamos editando y se pasa la acción) */}
+          {/* Botón aleatorio para contraseñas */}
           {isEditing && extraAction && (
             <TouchableOpacity onPress={extraAction}>
               <Ionicons name="shuffle-outline" size={20} color="#f59e0b" />
             </TouchableOpacity>
           )}
-
+          {/* Botón para ver u ocultar los datos sensibles */}
           {secure && (
             <TouchableOpacity onPress={() => toggleVisibility(key)}>
               <Ionicons
@@ -109,8 +154,6 @@ export default function ViewCredentialModal({
               />
             </TouchableOpacity>
           )}
-
-          
         </View>
       </View>
     </View>
@@ -122,9 +165,13 @@ export default function ViewCredentialModal({
         <View className="max-h-[85%] w-full overflow-hidden rounded-3xl bg-white shadow-2xl">
           <View className="flex-row items-center justify-between border-b border-slate-100 p-5">
             <Text className="text-xl font-bold text-slate-800">
-              {isEditing ? 'Editando...' : 
-               data.type === 'CARD' ? 'Tarjeta' : 
-               data.type === 'NOTE' ? 'Nota' : 'Login'}
+              {isEditing
+                ? 'Editando...'
+                : data.type === 'CARD'
+                  ? 'Tarjeta'
+                  : data.type === 'NOTE'
+                    ? 'Nota'
+                    : 'Login'}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={28} color="#94a3b8" />
@@ -132,12 +179,17 @@ export default function ViewCredentialModal({
           </View>
 
           <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
-            {renderField(data.type === 'CARD' ? 'Banco' : 'Servicio', 'serviceName', false, false, false)}
+            {renderField(
+              data.type === 'CARD' ? 'Banco' : 'Servicio',
+              'serviceName',
+              false,
+              false,
+              false
+            )}
 
             {data.type === 'LOGIN' && (
               <>
                 {renderField('Usuario', 'username', false, false, true)}
-                {/* Pasamos handleGeneratePassword como acción extra */}
                 {renderField('Contraseña', 'password', true, false, true, handleGeneratePassword)}
               </>
             )}
@@ -150,14 +202,11 @@ export default function ViewCredentialModal({
                   <View className="flex-1">
                     {renderField('Expira', 'expiryDate', false, false, false)}
                   </View>
-                  <View className="flex-1">
-                    {renderField('CVV', 'cvv', true, false, true)}
-                  </View>
+                  <View className="flex-1">{renderField('CVV', 'cvv', true, false, true)}</View>
                 </View>
               </>
             )}
 
-            {/* Solo se copia si es tipo NOTE (Nota Segura) */}
             {(data.type === 'NOTE' || isEditing || editForm.notes) &&
               renderField('Notas', 'notes', false, true, data.type === 'NOTE')}
 
@@ -195,7 +244,16 @@ export default function ViewCredentialModal({
                 </>
               )}
             </View>
-            {/* ... Resto del código (Delete button) */}
+
+            {!isEditing && (
+              <TouchableOpacity
+                disabled={isOfflineMode}
+                onPress={handleDelete}
+                className={`mt-6 mb-8 flex-row items-center justify-center p-2 ${isOfflineMode ? 'opacity-50' : ''}`}>
+                <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                <Text className="ml-2 font-semibold text-red-500">Eliminar permanentemente</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>

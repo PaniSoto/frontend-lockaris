@@ -1,12 +1,9 @@
 import * as SQLite from 'expo-sqlite';
 import * as SecureStore from 'expo-secure-store';
 
-// 1. Conexión a la base de datos
 const db = SQLite.openDatabaseSync('lockaris_db_1');
 
-// 2. Inicialización de tablas
 export const initDB = () => {
-  // Tabla de Usuarios
   db.execSync(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY NOT NULL,
@@ -16,7 +13,6 @@ export const initDB = () => {
     );
   `);
 
-  // Tabla de Credenciales
   db.execSync(`
     CREATE TABLE IF NOT EXISTS credentials (
       id TEXT PRIMARY KEY NOT NULL,
@@ -38,7 +34,7 @@ export const initDB = () => {
     );
   `);
 
-  // Tabla de Sincronización Pendiente
+  // Tabla de Sincronización para la cola de tareas para cuando vuelva el internet
   db.execSync(`
     CREATE TABLE IF NOT EXISTS pending_sync (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +49,7 @@ export const initDB = () => {
 export const syncService = {
   saveCredentialsFromCloud: (credentialsArray) => {
     db.withTransactionSync(() => {
-      db.runSync('DELETE FROM credentials'); 
+      db.runSync('DELETE FROM credentials');
       const statement = db.prepareSync(`
         INSERT INTO credentials (
           id, type, serviceName, notes, username, url, 
@@ -62,11 +58,23 @@ export const syncService = {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       try {
-        credentialsArray.forEach(c => {
+        credentialsArray.forEach((c) => {
           statement.executeSync([
-            c.id, c.type, c.serviceName, c.notes || '', c.username || '', c.url || '',
-            c.encryptedPassword || '', c.cardholderName || '', c.encryptedCardNumber || '',
-            c.encryptedCvv || '', c.expiryDate || '', c.iv, c.createdAt, c.updatedAt, c.userId
+            c.id,
+            c.type,
+            c.serviceName,
+            c.notes || '',
+            c.username || '',
+            c.url || '',
+            c.encryptedPassword || '',
+            c.cardholderName || '',
+            c.encryptedCardNumber || '',
+            c.encryptedCvv || '',
+            c.expiryDate || '',
+            c.iv,
+            c.createdAt,
+            c.updatedAt,
+            c.userId,
           ]);
         });
       } finally {
@@ -79,11 +87,13 @@ export const syncService = {
     return db.getAllSync('SELECT * FROM credentials ORDER BY serviceName ASC');
   },
 
+  // Guarda una acción (CREATE, UPDATE, DELETE) para ejecutarla luego en la API
   queueAction: (data, action) => {
-    db.runSync(
-      'INSERT INTO pending_sync (data, action, timestamp) VALUES (?, ?, ?)',
-      [JSON.stringify(data), action, Date.now()]
-    );
+    db.runSync('INSERT INTO pending_sync (data, action, timestamp) VALUES (?, ?, ?)', [
+      JSON.stringify(data),
+      action,
+      Date.now(),
+    ]);
   },
 
   getPendingActions: () => {
@@ -92,46 +102,40 @@ export const syncService = {
 
   removePendingAction: (id) => {
     db.runSync('DELETE FROM pending_sync WHERE id = ?', [id]);
-  }
+  },
 };
 
-// 4. Servicio de Autenticación (ACTUALIZADO)
+// SERVICIO DE AUTH: Manejo de identidad y SecureStore
 export const authService = {
   // Guarda el usuario en SQLite al iniciar sesión
   setSession: (user) => {
     db.runSync('DELETE FROM users');
-    db.runSync(
-      'INSERT INTO users (id, name, email, createdAt) VALUES (?, ?, ?, ?)',
-      [user.id, user.name, user.email, new Date().toISOString()]
-    );
+    db.runSync('INSERT INTO users (id, name, email, createdAt) VALUES (?, ?, ?, ?)', [
+      user.id,
+      user.name,
+      user.email,
+      new Date().toISOString(),
+    ]);
   },
 
-  // Obtiene los datos del usuario desde SQLite (Síncrono)
   getCurrentUser: () => {
     return db.getFirstSync('SELECT * FROM users');
   },
 
-  // Actualizar perfil localmente (Usado en SettingsPage)
   updateUser: (id, name, email) => {
     try {
-      db.runSync(
-        'UPDATE users SET name = ?, email = ? WHERE id = ?',
-        [name, email, id]
-      );
-      // Retornamos el usuario recién actualizado para refrescar el estado inmediatamente
+      db.runSync('UPDATE users SET name = ?, email = ? WHERE id = ?', [name, email, id]);
       return db.getFirstSync('SELECT * FROM users WHERE id = ?', [id]);
     } catch (error) {
-      console.error("Error en SQLite updateUser:", error);
+      console.error('Error en SQLite updateUser:', error);
       throw error;
     }
   },
 
-  // Obtener Token para llamadas API (Async usando SecureStore)
   getToken: async () => {
     return await SecureStore.getItemAsync('userToken');
   },
 
-  // Guardar Token manualmente si es necesario
   saveToken: async (token) => {
     await SecureStore.setItemAsync('userToken', token);
   },
@@ -139,10 +143,10 @@ export const authService = {
   // Limpieza total al salir
   logout: async () => {
     db.runSync('DELETE FROM users');
-    db.runSync('DELETE FROM credentials'); 
+    db.runSync('DELETE FROM credentials');
     db.runSync('DELETE FROM pending_sync');
     await SecureStore.deleteItemAsync('userToken');
-  }
+  },
 };
 
 export default db;

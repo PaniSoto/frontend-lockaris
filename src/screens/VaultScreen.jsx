@@ -11,16 +11,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
 import api from '@/services/api';
-
-// Servicios de sincronización y base de datos local
-import { saveCredential, syncPendingChanges } from '@/services/sync';
+import { saveCredential } from '@/services/sync';
 import { syncService } from '@/services/db';
-
-// Componentes Modales
 import ViewCredentialModal from '@/components/ViewCredentialModal';
 import AddCredentialModal from '@/components/AddCredentialModal';
 
 const VaultScreen = () => {
+  // Estado de los datos
   const [credentials, setCredentials] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
@@ -36,28 +33,26 @@ const VaultScreen = () => {
     try {
       if (!isSilent) setRefreshing(true);
 
-      // 1. Carga inmediata de SQLite (La verdad local)
+      // Carga local
       const localData = syncService.getLocalCredentials();
       setCredentials([...localData]);
 
+      // Verificación de la red
       const state = await NetInfo.fetch();
       if (state.isConnected && state.isInternetReachable) {
-        // 2. IMPORTANTE: Esperar a que terminen de enviarse los cambios pendientes
-        //await syncPendingChanges();
-
-        // 3. Traer datos de la nube
+        // Obtener los datos de la nube
         const response = await api.get('/api/credentials');
 
-        // 4. EL FILTRO MAESTRO:
-        // Si la nube me manda algo que yo SÉ que he borrado, lo ignoro.
-        // const cloudData = response.data.filter((item) => !deletedIdsRef.current.has(item.id));
+        // Se limpian los datos que están en proceso de borrado local
         const cloudData = response.data
           .filter((item) => !deletedIdsRef.current.has(item.id))
-          .sort((a, b) => 
-            (a.serviceName || "").localeCompare(b.serviceName || "", undefined, { sensitivity: 'base' })
+          .sort((a, b) =>
+            (a.serviceName || '').localeCompare(b.serviceName || '', undefined, {
+              sensitivity: 'base',
+            })
           );
 
-        // 5. Guardar en SQLite y actualizar pantalla con la lista limpia
+        // 5. Se guarda en SQLite y refresca la pantalla
         syncService.saveCredentialsFromCloud(cloudData);
         setCredentials([...cloudData]);
       }
@@ -73,29 +68,25 @@ const VaultScreen = () => {
     // Escucha cambios de conexión en tiempo real
     const unsubscribe = NetInfo.addEventListener((state) => {
       const isConnected = !!(state.isConnected && state.isInternetReachable);
-
-      // Si antes estábamos offline y ahora estamos online, sincronizamos solo
-      if (isConnected && isOfflineMode) {
-        console.log('Conexión recuperada: Sincronizando...');
-        // fetchCredentials(true);
-      }
+      fetchCredentials(true);
 
       setIsOfflineMode(!isConnected);
     });
 
-    return () => unsubscribe(); // Limpiar el listener al cerrar pantalla
+    return () => unsubscribe();
   }, [isOfflineMode]);
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener('event_refresh_messages', () => {
       fetchCredentials();
     });
+
     return () => {
       subscription.remove();
     };
   }, [fetchCredentials]);
 
-  // --- LÓGICA DE ACCIONES (UI OPTIMISTA) ---
+  // --- LÓGICA DE ACCIONES ---
 
   const handleCreate = async (formData) => {
     const tempId = `temp-${Date.now()}`;
@@ -106,14 +97,13 @@ const VaultScreen = () => {
 
     try {
       const state = await NetInfo.fetch();
+
       if (state.isConnected) {
         await saveCredential({ ...formData, type: itemType });
         fetchCredentials(true);
       } else {
         await saveCredential({ ...formData, type: itemType });
       }
-      //await saveCredential({ ...formData, type: itemType }); //esto guarda en la api y si no tiene conección en sqlite
-      //fetchCredentials(true); // Refrescar para obtener el ID real y datos actualizados
     } catch (error) {
       Alert.alert('Error', 'No se pudo crear localmente.');
       fetchCredentials(true);
@@ -128,7 +118,6 @@ const VaultScreen = () => {
 
     try {
       await saveCredential(updatedData);
-      //  fetchCredentials(true);
     } catch (error) {
       console.error('Error en update:', error);
       fetchCredentials(true);
@@ -136,16 +125,13 @@ const VaultScreen = () => {
   };
 
   const deletedIdsRef = useRef(new Set());
+
   const handleDeleteSuccess = (deletedId) => {
-    // 1. Quitar de la vista al instante
     setCredentials((prev) => prev.filter((item) => item.id !== deletedId));
     setSelectedCredential(null);
 
-    // 2. Anotar en la lista negra para que no "resucite" en el próximo fetch
     deletedIdsRef.current.add(deletedId);
 
-    // Opcional: Limpiar el ID de la lista negra tras 10 segundos
-    // (tiempo suficiente para que el servidor haya procesado el borrado real)
     setTimeout(() => {
       deletedIdsRef.current.delete(deletedId);
     }, 10000);
@@ -157,8 +143,7 @@ const VaultScreen = () => {
     setAddModalVisible(true);
   };
 
-  // --- RENDERIZADO ---
-
+  // --- RENDERIZADO DE LAS FILAS ---
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() => setSelectedCredential(item)}

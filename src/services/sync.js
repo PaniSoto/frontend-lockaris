@@ -2,26 +2,24 @@ import api from './api';
 import { syncService } from './db';
 import NetInfo from '@react-native-community/netinfo';
 
-/**
- * Guarda o Actualiza una credencial
- */
+// valida conectividad real antes de disparar las peticiones
 const revisarConexion = async () => {
   const state = await NetInfo.fetch();
   console.log('Estado de la conexión:', state);
-  return state.isInternetReachable; // Ahora sí devuelve true/false
+  return state.isInternetReachable;
 };
 
+// Lógica de guardado al crear o actualizar
 export const saveCredential = async (credential) => {
   try {
     const isUpdate = !!credential.id;
     let response;
 
     if (isUpdate) {
-      if (!await revisarConexion()) {
-        //Cuando quito estas tres lineas da error
-
+      if (!(await revisarConexion())) {
         return;
       }
+
       const { id, offline, ...payload } = credential;
       console.log('la credencial:', credential);
       response = await api.put(`/api/credentials/${id}`, payload); //aqui no llega el id
@@ -31,7 +29,7 @@ export const saveCredential = async (credential) => {
       const { offline, ...payload } = credential;
       console.log('credencial al crearse', credential);
       response = await api.post('/api/credentials', payload);
-      console.log("Respuesta de creación:", response.data);
+      console.log('Respuesta de creación:', response.data);
       console.log('Creación exitosa en la API');
     }
 
@@ -50,11 +48,9 @@ export const saveCredential = async (credential) => {
   }
 };
 
-/**
- * Elimina una credencial
- */
+// Lógica de eliminación
 export const deleteCredential = async (id) => {
-  if (!await revisarConexion()) {
+  if (!(await revisarConexion())) {
     return;
   }
 
@@ -68,7 +64,6 @@ export const deleteCredential = async (id) => {
 
     if (isNoConnection) {
       console.log('Modo Offline: Encolando eliminación para ID:', id);
-      // Guardamos el id explícitamente en el objeto data de la cola
       syncService.queueAction({ id }, 'DELETE');
       return { success: true, offline: true };
     }
@@ -84,16 +79,15 @@ export const syncPendingChanges = async () => {
     const pending = syncService.getPendingActions();
     if (pending.length === 0) return;
 
-    console.log(`🔄 Sincronizando ${pending.length} acciones pendientes...`);
+    console.log(` Sincronizando ${pending.length} acciones pendientes...`);
 
     for (const item of pending) {
       try {
         const payload = JSON.parse(item.data);
 
         if (item.action === 'DELETE') {
-          // Aseguramos que payload.id sea el UUID de Neon
           const targetId = payload.id;
-          console.log(`🗑️ Enviando DELETE a Neon para ID: ${targetId}`);
+          console.log(` Enviando DELETE a Neon para ID: ${targetId}`);
           await api.delete(`/api/credentials/${targetId}`);
         } else if (item.action === 'UPDATE' && payload.id) {
           const { id, offline, ...body } = payload;
@@ -103,27 +97,25 @@ export const syncPendingChanges = async () => {
           await api.post('/api/credentials', body);
         }
 
-        // Si la petición tuvo éxito, borramos de la cola local
+        // Si la petición tuvo éxito se borra de la cola local
         syncService.removePendingAction(item.id);
-        console.log(`✅ Acción ${item.action} sincronizada.`);
+        console.log(` Acción ${item.action} sincronizada.`);
       } catch (e) {
-        // ERROR CRÍTICO: Si el servidor dice 404, el registro ya no existe o el ID está mal.
-        // Lo borramos de la cola para no trabar el resto de la sincronización.
         if (e.response?.status === 404 || e.response?.status === 400) {
           console.warn(
-            `⚠️ Ítem ${item.id} descartado (No encontrado en servidor o error de formato).`
+            ` Item ${item.id} descartado (No encontrado en servidor o error de formato).`
           );
           syncService.removePendingAction(item.id);
           continue;
         }
 
-        // Si es error de conexión, paramos el bucle y salimos
+        // Si es error de conexión, paramos el bucle y se sale
         if (!e.response || e.message === 'Network Error') {
-          console.log('📶 Seguimos sin conexión, abortando sincronización.');
+          console.log(' Seguimos sin conexión, abortando sincronización.');
           break;
         }
 
-        console.error(`❌ Error en ítem ${item.id}:`, e.response?.data || e.message);
+        console.error(` Error en ítem ${item.id}:`, e.response?.data || e.message);
       }
     }
   } catch (error) {

@@ -22,7 +22,7 @@ const Register = ({ onBackToLogin }) => {
   const [error, setError] = useState('');
 
   const handleRegister = async () => {
-    // Validación local rápida
+    // Validación local para evitar peticiones al servidor
     if (!name.trim() || !email.trim() || !password.trim()) {
       setError('Por favor, rellena todos los campos');
       return;
@@ -32,19 +32,18 @@ const Register = ({ onBackToLogin }) => {
     setError('');
 
     try {
-      // Petición a tu ruta de Next.js
+      // Envío de datos al servicio de Auth en el Backend
       const response = await api.post('/api/auth/register', {
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password,
       });
 
-      // Si todo va bien, avisamos y volvemos al login
       Alert.alert('¡Cuenta creada!', 'Ya puedes iniciar sesión con tus credenciales', [
         { text: 'Ir al Login', onPress: onBackToLogin },
       ]);
     } catch (err) {
-      // Capturamos el mensaje de error que configuraste en el backend
+      
       const msg = err.response?.data?.message || 'Error al crear la cuenta';
       setError(msg);
     } finally {
@@ -56,7 +55,13 @@ const Register = ({ onBackToLogin }) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-slate-50">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, marginBottom: 50 }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: 24,
+          marginBottom: 50,
+        }}>
         {/* Header - Identidad Lockaris */}
         <View className="mb-8 items-center">
           <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-300">
