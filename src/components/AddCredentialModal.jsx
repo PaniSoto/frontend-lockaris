@@ -35,6 +35,19 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
     onSave(localForm);
   };
 
+  const formatCardNumber = (value) => {
+    // Eliminamos todo lo que no sea número
+    const v = value.replace(/\D/g, '');
+    // Dividimos en grupos de 4
+    const matches = v.match(/.{1,4}/g);
+
+    if (matches) {
+      // Unimos los grupos con un espacio, limitando a 16 dígitos (4 grupos)
+      return matches.join(' ').substring(0, 19);
+    }
+    return v;
+  };
+
   return (
     <Modal animationType="slide" transparent visible={isOpen} onRequestClose={onClose}>
       <View className="flex-1 justify-end bg-black/50">
@@ -114,8 +127,12 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         className="rounded-2xl bg-slate-100 p-4"
                         keyboardType="numeric"
                         placeholder="**** **** **** ****"
+                        maxLength={19} // 16 números + 3 espacios
                         value={localForm.cardNumber}
-                        onChangeText={(t) => setLocalForm({ ...localForm, cardNumber: t })}
+                        onChangeText={(t) => {
+                          const formatted = formatCardNumber(t);
+                          setLocalForm({ ...localForm, cardNumber: formatted });
+                        }}
                       />
                     </View>
                     <View className="flex-row gap-x-4">
@@ -124,8 +141,17 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         <TextInput
                           className="rounded-2xl bg-slate-100 p-4"
                           placeholder="MM/AA"
+                          keyboardType="numeric"
+                          maxLength={5} // MM/AA
                           value={localForm.expiryDate}
-                          onChangeText={(t) => setLocalForm({ ...localForm, expiryDate: t })}
+                          onChangeText={(t) => {
+                            // Bonus: Formateo rápido para fecha MM/AA
+                            let text = t.replace(/\D/g, '');
+                            if (text.length > 2) {
+                              text = text.substring(0, 2) + '/' + text.substring(2, 4);
+                            }
+                            setLocalForm({ ...localForm, expiryDate: text });
+                          }}
                         />
                       </View>
                       <View className="flex-1">
@@ -134,8 +160,15 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                           className="rounded-2xl bg-slate-100 p-4"
                           secureTextEntry
                           keyboardType="numeric"
+                          // Limitamos la entrada a 4 caracteres máximo
+                          maxLength={4}
+                          placeholder="123"
                           value={localForm.cvv}
-                          onChangeText={(t) => setLocalForm({ ...localForm, cvv: t })}
+                          onChangeText={(t) => {
+                            // Eliminamos cualquier carácter que no sea número por seguridad
+                            const cleanValue = t.replace(/\D/g, '');
+                            setLocalForm({ ...localForm, cvv: cleanValue });
+                          }}
                         />
                       </View>
                     </View>

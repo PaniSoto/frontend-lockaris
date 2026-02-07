@@ -4,6 +4,31 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { deleteCredential } from '@/services/sync';
 
+// --- FUNCIONES DE FORMATEO (Fuera del componente) ---
+
+const formatCardNumber = (value) => {
+  if (!value) return '';
+  const v = value.replace(/\D/g, '');
+  const matches = v.match(/.{1,4}/g);
+  return matches ? matches.join(' ').substring(0, 19) : v;
+};
+
+const formatExpiryDate = (value) => {
+  if (!value) return '';
+  let text = value.replace(/\D/g, '');
+  if (text.length > 2) {
+    text = text.substring(0, 2) + '/' + text.substring(2, 4);
+  }
+  return text.substring(0, 5);
+};
+
+const formatCVV = (value) => {
+  if (!value) return '';
+  return value.replace(/\D/g, '').substring(0, 4);
+};
+
+// ----------------------------------------------------
+
 export default function ViewCredentialModal({
   isOpen,
   onClose,
@@ -20,7 +45,12 @@ export default function ViewCredentialModal({
   // Sincroniza el formulario interno cuando se abre el modal con nuevos datos
   useEffect(() => {
     if (isOpen && data) {
-      setEditForm({ ...data });
+      // Al cargar, aplicamos formato al número de tarjeta si existe, para que se vea bien de entrada
+      const initialForm = { ...data };
+      if (data.type === 'CARD' && data.cardNumber) {
+        initialForm.cardNumber = formatCardNumber(data.cardNumber);
+      }
+      setEditForm(initialForm);
       setShowSensitive({});
     }
     if (!isOpen) {
@@ -54,6 +84,11 @@ export default function ViewCredentialModal({
 
   const handleSave = () => {
     if (!editForm.serviceName) return Alert.alert('Error', 'El título es obligatorio');
+
+    // Al guardar, podrías querer limpiar los espacios del número de tarjeta si tu backend lo prefiere limpio
+    // const cleanData = { ...editForm, cardNumber: editForm.cardNumber?.replace(/\s/g, '') };
+    // Pero lo dejaremos tal cual para este ejemplo:
+
     const finalData = { ...editForm, id: data.id };
     onUpdate(finalData);
     setIsEditing(false);
@@ -105,59 +140,84 @@ export default function ViewCredentialModal({
     multiline = false,
     canCopy = false,
     extraAction = null
-  ) => (
-    <View className="mb-4">
-      <Text className="mb-1 ml-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-        {label}
-      </Text>
-      <View
-        className={`rounded-2xl border bg-slate-50 ${isEditing ? 'border-blue-300 bg-white' : 'border-slate-100'} flex-row items-center p-4`}>
-        <TextInput
-          className="flex-1 py-0 text-base text-slate-800"
-          value={editForm[key] ? String(editForm[key]) : ''}
-          onChangeText={(t) => setEditForm((prev) => ({ ...prev, [key]: t }))}
-          editable={isEditing}
-          secureTextEntry={secure && !showSensitive[key]}
-          multiline={multiline}
-          textAlignVertical={multiline ? 'top' : 'center'}
-        />
+  ) => {
+    // Definir configuración específica por tipo de campo
+    const isCardField = ['cardNumber', 'expiryDate', 'cvv'].includes(key);
 
-        <View className="flex-row items-center gap-x-3">
-          {/* Botón para copiar */}
-          {editForm[key] && canCopy && (
-            <TouchableOpacity
-              onPress={() => {
-                Clipboard.setStringAsync(String(editForm[key]));
-                setCopiedField(key);
-                setTimeout(() => setCopiedField(null), 2000);
-              }}>
-              <Ionicons
-                name={copiedField === key ? 'checkmark' : 'copy-outline'}
-                size={18}
-                color={copiedField === key ? '#22c55e' : '#94a3b8'}
-              />
-            </TouchableOpacity>
-          )}
-          {/* Botón aleatorio para contraseñas */}
-          {isEditing && extraAction && (
-            <TouchableOpacity onPress={extraAction}>
-              <Ionicons name="shuffle-outline" size={20} color="#f59e0b" />
-            </TouchableOpacity>
-          )}
-          {/* Botón para ver u ocultar los datos sensibles */}
-          {secure && (
-            <TouchableOpacity onPress={() => toggleVisibility(key)}>
-              <Ionicons
-                name={showSensitive[key] ? 'eye-off-outline' : 'eye-outline'}
-                size={20}
-                color="#94a3b8"
-              />
-            </TouchableOpacity>
-          )}
+    // Definir maxLength según el campo
+    let maxLen;
+    if (key === 'cardNumber') maxLen = 19; // 16 dígitos + 3 espacios
+    if (key === 'expiryDate') maxLen = 5; // MM/AA
+    if (key === 'cvv') maxLen = 4; // Max 4 dígitos
+
+    return (
+      <View className="mb-4">
+        <Text className="mb-1 ml-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+          {label}
+        </Text>
+        <View
+          className={`rounded-2xl border bg-slate-50 ${
+            isEditing ? 'border-blue-300 bg-white' : 'border-slate-100'
+          } flex-row items-center p-4`}>
+          <TextInput
+            className="flex-1 py-0 text-base text-slate-800"
+            value={editForm[key] ? String(editForm[key]) : ''}
+            // Lógica de cambio de texto con formateo
+            onChangeText={(t) => {
+              let formattedValue = t;
+              if (isEditing) {
+                if (key === 'cardNumber') formattedValue = formatCardNumber(t);
+                if (key === 'expiryDate') formattedValue = formatExpiryDate(t);
+                if (key === 'cvv') formattedValue = formatCVV(t);
+              }
+              setEditForm((prev) => ({ ...prev, [key]: formattedValue }));
+            }}
+            editable={isEditing}
+            secureTextEntry={secure && !showSensitive[key]}
+            multiline={multiline}
+            textAlignVertical={multiline ? 'top' : 'center'}
+            // Teclado numérico solo para campos de tarjeta
+            keyboardType={isCardField ? 'numeric' : 'default'}
+            maxLength={maxLen}
+          />
+
+          <View className="flex-row items-center gap-x-3">
+            {/* Botón para copiar */}
+            {editForm[key] && canCopy && (
+              <TouchableOpacity
+                onPress={() => {
+                  Clipboard.setStringAsync(String(editForm[key]));
+                  setCopiedField(key);
+                  setTimeout(() => setCopiedField(null), 2000);
+                }}>
+                <Ionicons
+                  name={copiedField === key ? 'checkmark' : 'copy-outline'}
+                  size={18}
+                  color={copiedField === key ? '#22c55e' : '#94a3b8'}
+                />
+              </TouchableOpacity>
+            )}
+            {/* Botón aleatorio para contraseñas */}
+            {isEditing && extraAction && (
+              <TouchableOpacity onPress={extraAction}>
+                <Ionicons name="shuffle-outline" size={20} color="#f59e0b" />
+              </TouchableOpacity>
+            )}
+            {/* Botón para ver u ocultar los datos sensibles */}
+            {secure && (
+              <TouchableOpacity onPress={() => toggleVisibility(key)}>
+                <Ionicons
+                  name={showSensitive[key] ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#94a3b8"
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <Modal animationType="fade" transparent visible={isOpen}>
@@ -249,7 +309,9 @@ export default function ViewCredentialModal({
               <TouchableOpacity
                 disabled={isOfflineMode}
                 onPress={handleDelete}
-                className={`mt-6 mb-8 flex-row items-center justify-center p-2 ${isOfflineMode ? 'opacity-50' : ''}`}>
+                className={`mt-6 mb-8 flex-row items-center justify-center p-2 ${
+                  isOfflineMode ? 'opacity-50' : ''
+                }`}>
                 <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 <Text className="ml-2 font-semibold text-red-500">Eliminar permanentemente</Text>
               </TouchableOpacity>
