@@ -31,9 +31,16 @@
       "supportsTablet": true
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.pani_003.lockaris"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "aafec688-0f12-4dad-a766-3b35c5b093e9"
       }
     }
   }
