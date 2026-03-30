@@ -54,8 +54,7 @@ api.interceptors.response.use(
 
       if (status === 401) {
         console.log('Aviso: Credenciales incorrectas o sesión expirada.');
-      }
-      else {
+      } else {
         console.error('API Server Error:', {
           status: status,
           data: error.response.data,

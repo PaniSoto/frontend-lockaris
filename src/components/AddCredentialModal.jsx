@@ -44,15 +44,13 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
   return (
     <Modal animationType="slide" transparent={false} visible={isOpen} onRequestClose={onClose}>
       {/* Usamos KeyboardAvoidingView para que el teclado empuje el contenido */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+        style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View className="flex-1 bg-white">
-            
             {/* CABECERA: Se mantiene fija arriba */}
-            <View className="flex-row items-center justify-between p-8 pt-16 bg-slate-50 border-b border-slate-200">
+            <View className="flex-row items-center justify-between border-b border-slate-200 bg-slate-50 p-8 pt-16">
               <View>
                 <Text className="text-xs font-bold tracking-widest text-blue-500 uppercase">
                   Crear Nuevo
@@ -67,19 +65,17 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
             </View>
 
             {/* FORMULARIO: Con Scroll para que nada quede oculto tras el teclado */}
-            <ScrollView 
+            <ScrollView
               className="flex-1 px-8"
               contentContainerStyle={{ paddingVertical: 24, paddingBottom: 60 }}
               showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
+              keyboardShouldPersistTaps="handled">
               <View className="gap-y-5">
-                
                 {/* Título / Servicio */}
                 <View>
                   <Text className="mb-2 ml-1 font-semibold text-slate-600">Título / Servicio</Text>
                   <TextInput
-                    className="rounded-2xl bg-slate-100 p-4 text-slate-900 border border-slate-200"
+                    className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900"
                     placeholder="Ej: Netflix, Amazon..."
                     placeholderTextColor="#94a3b8"
                     value={localForm.serviceName}
@@ -93,7 +89,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                     <View>
                       <Text className="mb-2 ml-1 font-semibold text-slate-600">Usuario</Text>
                       <TextInput
-                        className="rounded-2xl bg-slate-100 p-4 border border-slate-200"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                         autoCapitalize="none"
                         value={localForm.username}
                         onChangeText={(t) => setLocalForm({ ...localForm, username: t })}
@@ -102,7 +98,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                     <View>
                       <Text className="mb-2 ml-1 font-semibold text-slate-600">Contraseña</Text>
                       <TextInput
-                        className="rounded-2xl bg-slate-100 p-4 border border-slate-200"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                         secureTextEntry
                         value={localForm.password}
                         onChangeText={(t) => setLocalForm({ ...localForm, password: t })}
@@ -115,37 +111,44 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                 {itemType === 'CARD' && (
                   <>
                     <View>
-                      <Text className="mb-2 ml-1 font-semibold text-slate-600">Nombre en Tarjeta</Text>
+                      <Text className="mb-2 ml-1 font-semibold text-slate-600">
+                        Nombre en Tarjeta
+                      </Text>
                       <TextInput
-                        className="rounded-2xl bg-slate-100 p-4 uppercase border border-slate-200"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4 uppercase"
                         placeholder="JUAN PEREZ"
                         value={localForm.cardholderName}
                         onChangeText={(t) => setLocalForm({ ...localForm, cardholderName: t })}
                       />
                     </View>
                     <View>
-                      <Text className="mb-2 ml-1 font-semibold text-slate-600">Número de Tarjeta</Text>
+                      <Text className="mb-2 ml-1 font-semibold text-slate-600">
+                        Número de Tarjeta
+                      </Text>
                       <TextInput
-                        className="rounded-2xl bg-slate-100 p-4 border border-slate-200"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                         keyboardType="numeric"
                         placeholder="0000 0000 0000 0000"
                         maxLength={19}
                         value={localForm.cardNumber}
-                        onChangeText={(t) => setLocalForm({ ...localForm, cardNumber: formatCardNumber(t) })}
+                        onChangeText={(t) =>
+                          setLocalForm({ ...localForm, cardNumber: formatCardNumber(t) })
+                        }
                       />
                     </View>
                     <View className="flex-row gap-x-4">
                       <View className="flex-1">
                         <Text className="mb-2 ml-1 font-semibold text-slate-600">Expira</Text>
                         <TextInput
-                          className="rounded-2xl bg-slate-100 p-4 border border-slate-200"
+                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                           placeholder="MM/AA"
                           keyboardType="numeric"
                           maxLength={5}
                           value={localForm.expiryDate}
                           onChangeText={(t) => {
                             let text = t.replace(/\D/g, '');
-                            if (text.length > 2) text = text.substring(0, 2) + '/' + text.substring(2, 4);
+                            if (text.length > 2)
+                              text = text.substring(0, 2) + '/' + text.substring(2, 4);
                             setLocalForm({ ...localForm, expiryDate: text });
                           }}
                         />
@@ -153,13 +156,15 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                       <View className="flex-1">
                         <Text className="mb-2 ml-1 font-semibold text-slate-600">CVV</Text>
                         <TextInput
-                          className="rounded-2xl bg-slate-100 p-4 border border-slate-200"
+                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                           secureTextEntry
                           keyboardType="numeric"
                           maxLength={4}
                           placeholder="123"
                           value={localForm.cvv}
-                          onChangeText={(t) => setLocalForm({ ...localForm, cvv: t.replace(/\D/g, '') })}
+                          onChangeText={(t) =>
+                            setLocalForm({ ...localForm, cvv: t.replace(/\D/g, '') })
+                          }
                         />
                       </View>
                     </View>
@@ -170,7 +175,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                 <View>
                   <Text className="mb-2 ml-1 font-semibold text-slate-600">Notas Adicionales</Text>
                   <TextInput
-                    className="h-32 rounded-2xl bg-slate-100 p-4 text-slate-900 border border-slate-200"
+                    className="h-32 rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900"
                     multiline
                     textAlignVertical="top"
                     value={localForm.notes}
@@ -182,8 +187,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                 <TouchableOpacity
                   onPress={handleLocalSave}
                   activeOpacity={0.8}
-                  className="mt-4 rounded-2xl bg-blue-600 py-5 shadow-xl shadow-blue-300"
-                >
+                  className="mt-4 rounded-2xl bg-blue-600 py-5 shadow-xl shadow-blue-300">
                   <Text className="text-center text-lg font-bold text-white">
                     Guardar en Bóveda
                   </Text>

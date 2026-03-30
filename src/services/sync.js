@@ -22,7 +22,7 @@ export const saveCredential = async (credential) => {
 
       const { id, offline, ...payload } = credential;
       console.log('la credencial:', credential);
-      response = await api.put(`/api/credentials/${id}`, payload); //aqui no llega el id
+      response = await api.put(`/api/credentials/${id}`, payload);
       console.log('Llamando a PUT en:', `/api/credentials/${id}`);
       console.log('Actualización exitosa en la API');
     } else {
@@ -48,25 +48,22 @@ export const saveCredential = async (credential) => {
   }
 };
 
-// Lógica de eliminación
 export const deleteCredential = async (id) => {
-  if (!(await revisarConexion())) {
-    return;
-  }
-
   try {
-    await api.delete(`/api/credentials/${id}`);
-    console.log('Eliminación exitosa en la API');
-    return { success: true, offline: false };
-  } catch (error) {
-    const isNoConnection =
-      error.isOffline || error.message === 'Network Error' || error.code === 'ECONNABORTED';
-
-    if (isNoConnection) {
-      console.log('Modo Offline: Encolando eliminación para ID:', id);
-      syncService.queueAction({ id }, 'DELETE');
-      return { success: true, offline: true };
+    // Como bloqueamos borrar offline en la UI, aquí suponemos que hay red
+    // Pero si falla la red en el último segundo, lanzamos error
+    if (!(await revisarConexion())) {
+      throw new Error('Sin conexión');
     }
+
+    await api.delete(`/api/credentials/${id}`);
+
+    // ¡IMPORTANTE! Borramos de la tabla de visualización para que no resucite
+    syncService.deleteLocalCredential(id);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error al eliminar:', error);
     throw error;
   }
 };

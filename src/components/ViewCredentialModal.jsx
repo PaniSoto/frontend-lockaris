@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { deleteCredential } from '@/services/sync';
 
-// --- FUNCIONES DE FORMATEO (Fuera del componente) ---
+// --- FUNCIONES DE FORMATEO ---
 
 const formatCardNumber = (value) => {
   if (!value) return '';
@@ -27,7 +27,7 @@ const formatCVV = (value) => {
   return value.replace(/\D/g, '').substring(0, 4);
 };
 
-// ----------------------------------------------------
+// --- COMPONENTE PRINCIPAL ---
 
 export default function ViewCredentialModal({
   isOpen,
@@ -42,10 +42,9 @@ export default function ViewCredentialModal({
   const [showSensitive, setShowSensitive] = useState({});
   const [copiedField, setCopiedField] = useState(null);
 
-  // Sincroniza el formulario interno cuando se abre el modal con nuevos datos
+  // Sincroniza el formulario interno cuando se abre el modal
   useEffect(() => {
     if (isOpen && data) {
-      // Al cargar, aplicamos formato al número de tarjeta si existe, para que se vea bien de entrada
       const initialForm = { ...data };
       if (data.type === 'CARD' && data.cardNumber) {
         initialForm.cardNumber = formatCardNumber(data.cardNumber);
@@ -60,9 +59,10 @@ export default function ViewCredentialModal({
 
   if (!isOpen || !data) return null;
 
+  // Estilo visual basado en el tipo de credencial o modo offline
   const theme = {
     bg: isOfflineMode
-      ? 'bg-gray-400'
+      ? 'bg-slate-400'
       : data.type === 'CARD'
         ? 'bg-emerald-600'
         : data.type === 'NOTE'
@@ -70,7 +70,6 @@ export default function ViewCredentialModal({
           : 'bg-blue-600',
   };
 
-  // Lógica de generación aleatoria
   const handleGeneratePassword = () => {
     const length = 16;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
@@ -84,55 +83,45 @@ export default function ViewCredentialModal({
 
   const handleSave = () => {
     if (!editForm.serviceName) return Alert.alert('Error', 'El título es obligatorio');
-
-    // Al guardar, podrías querer limpiar los espacios del número de tarjeta si tu backend lo prefiere limpio
-    // const cleanData = { ...editForm, cardNumber: editForm.cardNumber?.replace(/\s/g, '') };
-    // Pero lo dejaremos tal cual para este ejemplo:
-
     const finalData = { ...editForm, id: data.id };
     onUpdate(finalData);
     setIsEditing(false);
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      '¿Eliminar esta información?',
-      'Esta acción no se puede deshacer. Si estás sin conexión, se eliminará permanentemente al sincronizar.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const result = await deleteCredential(data.id);
-              if (result) {
-                onClose();
+    // BLOQUEO OFFLINE
+    if (isOfflineMode) {
+      return Alert.alert(
+        'Función no disponible',
+        'Necesitas conexión a internet para poder editar o eliminar credenciales.'
+      );
+    }
 
-                if (onDeleteSuccess) onDeleteSuccess(data.id);
-
-                if (result.offline) {
-                  Alert.alert(
-                    'Modo Offline',
-                    'Se eliminará del servidor automáticamente cuando tengas red.'
-                  );
-                }
-              }
-            } catch (error) {
-              console.error('Error al eliminar la credencial:', error);
-              Alert.alert('Error', 'No se pudo eliminar la credencial.');
+    Alert.alert('¿Eliminar esta información?', 'Esta acción no se puede deshacer.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const result = await deleteCredential(data.id);
+            if (result) {
+              onClose();
+              if (onDeleteSuccess) onDeleteSuccess(data.id);
             }
-          },
+          } catch (error) {
+            console.error('Error al eliminar:', error);
+            Alert.alert('Error', 'No se pudo eliminar la credencial.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const toggleVisibility = (key) => {
     setShowSensitive((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Función auxiliar para crear filas de datos uniformes
   const renderField = (
     label,
     key,
@@ -141,14 +130,12 @@ export default function ViewCredentialModal({
     canCopy = false,
     extraAction = null
   ) => {
-    // Definir configuración específica por tipo de campo
     const isCardField = ['cardNumber', 'expiryDate', 'cvv'].includes(key);
 
-    // Definir maxLength según el campo
     let maxLen;
-    if (key === 'cardNumber') maxLen = 19; // 16 dígitos + 3 espacios
-    if (key === 'expiryDate') maxLen = 5; // MM/AA
-    if (key === 'cvv') maxLen = 4; // Max 4 dígitos
+    if (key === 'cardNumber') maxLen = 19;
+    if (key === 'expiryDate') maxLen = 5;
+    if (key === 'cvv') maxLen = 4;
 
     return (
       <View className="mb-4">
@@ -156,13 +143,10 @@ export default function ViewCredentialModal({
           {label}
         </Text>
         <View
-          className={`rounded-2xl border bg-slate-50 ${
-            isEditing ? 'border-blue-300 bg-white' : 'border-slate-100'
-          } flex-row items-center p-4`}>
+          className={`rounded-2xl border bg-slate-50 ${isEditing ? 'border-blue-300 bg-white' : 'border-slate-100'} flex-row items-center p-4`}>
           <TextInput
             className="flex-1 py-0 text-base text-slate-800"
             value={editForm[key] ? String(editForm[key]) : ''}
-            // Lógica de cambio de texto con formateo
             onChangeText={(t) => {
               let formattedValue = t;
               if (isEditing) {
@@ -176,13 +160,10 @@ export default function ViewCredentialModal({
             secureTextEntry={secure && !showSensitive[key]}
             multiline={multiline}
             textAlignVertical={multiline ? 'top' : 'center'}
-            // Teclado numérico solo para campos de tarjeta
             keyboardType={isCardField ? 'numeric' : 'default'}
             maxLength={maxLen}
           />
-
           <View className="flex-row items-center gap-x-3">
-            {/* Botón para copiar */}
             {editForm[key] && canCopy && (
               <TouchableOpacity
                 onPress={() => {
@@ -197,13 +178,11 @@ export default function ViewCredentialModal({
                 />
               </TouchableOpacity>
             )}
-            {/* Botón aleatorio para contraseñas */}
             {isEditing && extraAction && (
               <TouchableOpacity onPress={extraAction}>
                 <Ionicons name="shuffle-outline" size={20} color="#f59e0b" />
               </TouchableOpacity>
             )}
-            {/* Botón para ver u ocultar los datos sensibles */}
             {secure && (
               <TouchableOpacity onPress={() => toggleVisibility(key)}>
                 <Ionicons
@@ -239,13 +218,7 @@ export default function ViewCredentialModal({
           </View>
 
           <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
-            {renderField(
-              data.type === 'CARD' ? 'Banco' : 'Servicio',
-              'serviceName',
-              false,
-              false,
-              false
-            )}
+            {renderField(data.type === 'CARD' ? 'Banco' : 'Servicio', 'serviceName')}
 
             {data.type === 'LOGIN' && (
               <>
@@ -256,12 +229,10 @@ export default function ViewCredentialModal({
 
             {data.type === 'CARD' && (
               <>
-                {renderField('Titular', 'cardholderName', false, false, false)}
+                {renderField('Titular', 'cardholderName')}
                 {renderField('Número', 'cardNumber', true, false, true)}
                 <View className="flex-row gap-x-4">
-                  <View className="flex-1">
-                    {renderField('Expira', 'expiryDate', false, false, false)}
-                  </View>
+                  <View className="flex-1">{renderField('Expira', 'expiryDate')}</View>
                   <View className="flex-1">{renderField('CVV', 'cvv', true, false, true)}</View>
                 </View>
               </>
@@ -295,9 +266,17 @@ export default function ViewCredentialModal({
                     <Text className="text-center font-bold text-slate-600">Cerrar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    disabled={isOfflineMode}
-                    onPress={() => setIsEditing(true)}
-                    className={`flex-1 rounded-2xl py-4 ${theme.bg} flex-row items-center justify-center gap-2`}>
+                    onPress={() => {
+                      if (isOfflineMode) {
+                        Alert.alert(
+                          'Función no disponible',
+                          'Necesitas conexión a internet para poder editar o eliminar credenciales.'
+                        );
+                      } else {
+                        setIsEditing(true);
+                      }
+                    }}
+                    className={`flex-1 rounded-2xl py-4 ${isOfflineMode ? 'bg-slate-300' : theme.bg} flex-row items-center justify-center gap-2`}>
                     <Ionicons name="pencil" size={16} color="white" />
                     <Text className="text-center font-bold text-white">Editar</Text>
                   </TouchableOpacity>
@@ -307,13 +286,18 @@ export default function ViewCredentialModal({
 
             {!isEditing && (
               <TouchableOpacity
-                disabled={isOfflineMode}
                 onPress={handleDelete}
-                className={`mt-6 mb-8 flex-row items-center justify-center p-2 ${
-                  isOfflineMode ? 'opacity-50' : ''
-                }`}>
-                <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                <Text className="ml-2 font-semibold text-red-500">Eliminar permanentemente</Text>
+                activeOpacity={0.6}
+                className="mt-6 mb-8 flex-row items-center justify-center p-2">
+                <Ionicons
+                  name="trash-outline"
+                  size={18}
+                  color={isOfflineMode ? '#cbd5e1' : '#ef4444'}
+                />
+                <Text
+                  className={`ml-2 font-semibold ${isOfflineMode ? 'text-slate-400' : 'text-red-500'}`}>
+                  Eliminar permanentemente
+                </Text>
               </TouchableOpacity>
             )}
           </ScrollView>
