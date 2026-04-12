@@ -148,18 +148,41 @@ export const authService = {
       new Date().toISOString(),
     ]);
   },
+
   getCurrentUser: () => db.getFirstSync('SELECT * FROM users'),
+
   updateUser: (id, name, email) => {
     db.runSync('UPDATE users SET name = ?, email = ? WHERE id = ?', [name, email, id]);
     return db.getFirstSync('SELECT * FROM users WHERE id = ?', [id]);
   },
-  getToken: async () => await SecureStore.getItemAsync('userToken'),
-  saveToken: async (token) => await SecureStore.setItemAsync('userToken', token),
+
+  // --- GESTIÓN DE TOKEN ---
+  getToken: async () => {
+    return await SecureStore.getItemAsync('userToken');
+  },
+
+  saveToken: async (token) => {
+    await SecureStore.setItemAsync('userToken', token);
+  },
+
+  // --- GESTIÓN DE BIOMETRÍA (ESTO ES LO QUE FALTABA) ---
+  saveBiometricPreference: async (enabled) => {
+    await SecureStore.setItemAsync('useBiometrics', enabled ? 'true' : 'false');
+  },
+
+  getBiometricPreference: async () => {
+    const res = await SecureStore.getItemAsync('useBiometrics');
+    if (res === null) return null;
+    return res === 'true';
+  },
+
+  // --- CIERRE DE SESIÓN ---
   logout: async () => {
     db.runSync('DELETE FROM users');
     db.runSync('DELETE FROM credentials');
     db.runSync('DELETE FROM pending_sync');
     await SecureStore.deleteItemAsync('userToken');
+    // Nota: No borramos 'useBiometrics' para que recuerde la preferencia
   },
 };
 

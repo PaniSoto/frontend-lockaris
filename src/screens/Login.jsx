@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 import api from '@/services/api';
 import { authService } from '@/services/db';
@@ -22,7 +24,40 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  // Se envían los datos al backend
+  // --- NUEVA FUNCIÓN: INICIO MANUAL POR HUELLA ---
+const handleBiometricAuth = async () => {
+  try {
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+    if (!hasHardware || !isEnrolled) return;
+
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Acceder a Lockaris',
+    });
+
+    if (result.success) {
+      setError(''); // <--- Limpiamos cualquier error previo para que no confunda
+      let token = await authService.getToken();
+      
+      if (!token) {
+        console.log("Reintentando lectura de token...");
+        await new Promise(resolve => setTimeout(resolve, 800)); // Un poco más de tiempo
+        token = await authService.getToken();
+      }
+
+      if (token) {
+        onLoginSuccess();
+      } else {
+        // Solo mostramos error si DE VERDAD no hay token tras reintentar
+        setError("Inicia sesión con contraseña una vez para activar la huella.");
+      }
+    }
+  } catch (err) {
+    console.log("Error en biometría:", err);
+  }
+};
+
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       setError('Por favor, rellena todos los campos');
@@ -33,17 +68,20 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
     setError('');
 
     try {
-      // Petición POST al endpoint de autentificación
       const response = await api.post('/api/auth/login', {
         email: email.toLowerCase().trim(),
         password,
       });
 
       const { token, user } = response.data;
-      console.log('Token recibido del login:', token);
-      // Se guarda el Token en el almacenamiento cifrado del dispositivo.
-      await SecureStore.setItemAsync('userToken', token);
+      
+      // Guardamos y aseguramos
+      await authService.saveToken(token);
       authService.setSession(user);
+      
+      // Activar la preferencia de biometría automáticamente al loguear con éxito
+      await authService.saveBiometricPreference(true);
+
       onLoginSuccess();
     } catch (err) {
       const msg = err.response?.data?.error || 'Correo o contraseña incorrectos';
@@ -52,6 +90,31 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
       setLoading(false);
     }
   };
+
+useEffect(() => {
+  const initAuth = async () => {
+    // 1. Verificamos que el servicio esté listo
+    if (authService && typeof authService.getBiometricPreference === 'function') {
+      try {
+        const pref = await authService.getBiometricPreference();
+        const token = await authService.getToken(); // <--- AÑADIMOS ESTO
+
+        // 2. SOLO disparamos si el usuario quiere usar huella Y hay un token guardado
+        if (pref === true && token) {
+          setTimeout(() => {
+            handleBiometricAuth();
+          }, 1000);
+        } else {
+          console.log("Auto-auth cancelado: No hay token o preferencia desactivada");
+        }
+      } catch (e) {
+        console.log("Error en auto-auth:", e);
+      }
+    }
+  };
+
+  initAuth();
+}, []);
 
   return (
     <KeyboardAvoidingView
