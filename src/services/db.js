@@ -48,13 +48,11 @@ export const syncService = {
   // Guarda/Actualiza una sola credencial en el móvil (Evita que resuciten datos viejos)
   saveLocalCredential: (c) => {
     db.runSync(
-      `
-      INSERT OR REPLACE INTO credentials (
+      `INSERT OR REPLACE INTO credentials (
         id, type, serviceName, notes, username, url, 
         encryptedPassword, cardholderName, encryptedCardNumber, 
         encryptedCvv, expiryDate, iv, createdAt, updatedAt, userId
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         c.id,
         c.type,
@@ -62,10 +60,10 @@ export const syncService = {
         c.notes || '',
         c.username || '',
         c.url || '',
-        c.encryptedPassword || '',
+        c.password || c.encryptedPassword || '', // Unificado
         c.cardholderName || '',
-        c.encryptedCardNumber || '',
-        c.encryptedCvv || '',
+        c.cardNumber || c.encryptedCardNumber || '', // Unificado
+        c.cvv || c.encryptedCvv || '', // Unificado
         c.expiryDate || '',
         c.iv || 'pending',
         c.createdAt || new Date().toISOString(),
@@ -73,6 +71,35 @@ export const syncService = {
         c.userId || null,
       ]
     );
+  },
+
+  updateCredentialLocal: (c) => {
+    try {
+      db.runSync(
+        `UPDATE credentials SET 
+          type = ?, serviceName = ?, notes = ?, username = ?, url = ?, 
+          encryptedPassword = ?, cardholderName = ?, encryptedCardNumber = ?, 
+          encryptedCvv = ?, expiryDate = ?, iv = ?, updatedAt = ?
+        WHERE id = ?`,
+        [
+          c.type,
+          c.serviceName,
+          c.notes || '',
+          c.username || '',
+          c.url || '',
+          c.password || c.encryptedPassword || '',
+          c.cardholderName || '',
+          c.cardNumber || c.encryptedCardNumber || '',
+          c.cvv || c.encryptedCvv || '',
+          c.expiryDate || '',
+          c.iv || 'pending',
+          c.updatedAt || new Date().toISOString(),
+          c.id,
+        ]
+      );
+    } catch (error) {
+      console.error('Error actualizando local:', error);
+    }
   },
 
   // ELIMINA de la tabla de visualización (Para que no se vea offline)
@@ -99,12 +126,12 @@ export const syncService = {
             c.notes || '',
             c.username || '',
             c.url || '',
-            c.encryptedPassword || '',
+            c.password || c.encryptedPassword || '', // 👈 CORREGIDO AQUÍ TAMBIÉN
             c.cardholderName || '',
-            c.encryptedCardNumber || '',
-            c.encryptedCvv || '',
+            c.cardNumber || c.encryptedCardNumber || '', // 👈 CORREGIDO AQUÍ TAMBIÉN
+            c.cvv || c.encryptedCvv || '', // 👈 CORREGIDO AQUÍ TAMBIÉN
             c.expiryDate || '',
-            c.iv,
+            c.iv || 'pending',
             c.createdAt,
             c.updatedAt,
             c.userId,
@@ -117,7 +144,14 @@ export const syncService = {
   },
 
   getLocalCredentials: () => {
-    return db.getAllSync('SELECT * FROM credentials ORDER BY serviceName ASC');
+    const rows = db.getAllSync('SELECT * FROM credentials ORDER BY serviceName ASC');
+    return rows.map((c) => ({
+      ...c,
+      // Mapeo inverso: Aseguramos que el objeto que sale de la DB tenga los nombres que el Modal espera
+      cardNumber: c.encryptedCardNumber || '',
+      password: c.encryptedPassword || '',
+      cvv: c.encryptedCvv || '',
+    }));
   },
 
   queueAction: (data, action) => {
@@ -137,7 +171,6 @@ export const syncService = {
   },
 };
 
-// ... authService se mantiene igual ...
 export const authService = {
   setSession: (user) => {
     db.runSync('DELETE FROM users');
@@ -165,7 +198,7 @@ export const authService = {
     await SecureStore.setItemAsync('userToken', token);
   },
 
-  // --- GESTIÓN DE BIOMETRÍA (ESTO ES LO QUE FALTABA) ---
+  // --- GESTIÓN DE BIOMETRÍA ---
   saveBiometricPreference: async (enabled) => {
     await SecureStore.setItemAsync('useBiometrics', enabled ? 'true' : 'false');
   },
@@ -182,7 +215,6 @@ export const authService = {
     db.runSync('DELETE FROM credentials');
     db.runSync('DELETE FROM pending_sync');
     await SecureStore.deleteItemAsync('userToken');
-    // Nota: No borramos 'useBiometrics' para que recuerde la preferencia
   },
 };
 

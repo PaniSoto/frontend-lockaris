@@ -7,15 +7,6 @@ import { authService } from '@/services/db';
 export default function SettingsPage() {
   const router = useRouter();
 
-  // Función para el mensaje de "Próximamente"
-  const mostrarAvisoProximamente = () => {
-    Alert.alert(
-      'Próximamente',
-      'La edición de perfil estará disponible en la siguiente versión de Lockaris.',
-      [{ text: 'Entendido', style: 'default' }]
-    );
-  };
-
   const confirmarCierreSesion = () => {
     Alert.alert('Cerrar Sesión', '¿Estás seguro de que quieres salir de Lockaris?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -41,17 +32,6 @@ export default function SettingsPage() {
       <View className="px-6">
         {/* GRUPO DE OPCIONES (Contenedor estilo Tarjeta) */}
         <View className="overflow-hidden rounded-[30px] border border-slate-100 bg-white shadow-sm">
-          {/* Opción de Perfil */}
-          <TouchableOpacity
-            onPress={mostrarAvisoProximamente}
-            className="flex-row items-center border-b border-slate-50 p-5 active:bg-slate-50">
-            <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-              <Ionicons name="person-outline" size={20} color="#64748b" />
-            </View>
-            <Text className="flex-1 text-base font-medium text-slate-700">Mi Perfil</Text>
-            <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-          </TouchableOpacity>
-
           {/* Opción de Cerrar Sesión */}
           <TouchableOpacity
             onPress={confirmarCierreSesion}

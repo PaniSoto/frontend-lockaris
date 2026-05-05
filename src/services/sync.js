@@ -16,32 +16,37 @@ export const saveCredential = async (credential) => {
     let response;
 
     if (isUpdate) {
-      if (!(await revisarConexion())) {
-        return;
-      }
+      if (!(await revisarConexion())) throw new Error('Sin conexión');
 
-      const { id, offline, ...payload } = credential;
-      console.log('la credencial:', credential);
+      const { id, ...payload } = credential;
       response = await api.put(`/api/credentials/${id}`, payload);
-      console.log('Llamando a PUT en:', `/api/credentials/${id}`);
-      console.log('Actualización exitosa en la API');
-    } else {
-      const { offline, ...payload } = credential;
-      console.log('credencial al crearse', credential);
-      response = await api.post('/api/credentials', payload);
-      console.log('Respuesta de creación:', response.data);
-      console.log('Creación exitosa en la API');
-    }
 
+      // ¡AQUÍ ESTÁ EL TRUCO!
+      // En lugar de confiar ciegamente en lo que devuelve la API (que viene encriptado),
+      // actualizamos el local usando los datos del formulario 'credential'
+      // pero le añadimos el ID y fechas que nos dé el servidor.
+      if (response.data) {
+        syncService.updateCredentialLocal({
+          ...credential, 
+          ...response.data, // Priorizamos ID y Timestamps del servidor
+          notes: credential.notes, // Nos aseguramos de que la nota sea el texto plano
+          password: credential.password // Nos aseguramos de que el password sea el texto plano
+        });
+      }
+    } else {
+      // Lógica de CREATE (POST)
+      const { ...payload } = credential;
+      response = await api.post('/api/credentials', payload);
+      if (response.data) {
+        syncService.saveLocalCredential(response.data);
+      }
+    }
     return response.data;
   } catch (error) {
-    const isNoConnection =
-      error.isOffline || error.message === 'Network Error' || error.code === 'ECONNABORTED';
-
-    if (isNoConnection) {
-      const actionType = credential.id ? 'UPDATE' : 'CREATE';
-      console.log(`Modo Offline: Encolando acción ${actionType}`);
-      syncService.queueAction(credential, actionType);
+    // Lógica de encolado offline que ya tienes...
+    if (error.message === 'Sin conexión' || error.isOffline) {
+      syncService.updateCredentialLocal({ ...credential, offline: true });
+      syncService.queueAction(credential, credential.id ? 'UPDATE' : 'CREATE');
       return { ...credential, offline: true };
     }
     throw error;
@@ -106,7 +111,6 @@ export const syncPendingChanges = async () => {
           continue;
         }
 
-        // Si es error de conexión, paramos el bucle y se sale
         if (!e.response || e.message === 'Network Error') {
           console.log(' Seguimos sin conexión, abortando sincronización.');
           break;

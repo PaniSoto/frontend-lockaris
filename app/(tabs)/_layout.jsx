@@ -30,8 +30,8 @@ export default function TabLayout() {
         name="vault"
         options={{
           title: 'Bóveda',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'shield' : 'shield-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -39,8 +39,8 @@ export default function TabLayout() {
         name="generator"
         options={{
           title: 'Generador',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="key-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'key' : 'key-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -48,8 +48,8 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Ajustes',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />
           ),
         }}
       />
