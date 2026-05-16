@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Switch, Share, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react'; // 1. Añadimos useEffect
+import { View, Text, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import NetInfo from '@react-native-community/netinfo'; // 2. Importamos NetInfo
 
 export default function GeneratorPage() {
-  // --- ESTADOS: Controlan las opciones de la contraseña y el resultado ---
   const [password, setPassword] = useState('P4ssw0rd!');
   const [length, setLength] = useState(12);
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSymbols, setIncludeSymbols] = useState(true);
   const [includeUppercase, setIncludeUppercase] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // --- LÓGICA PRINCIPAL: Construye el caracteresPermitidos y genera el string aleatorio ---
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOfflineMode(!state.isConnected);
+    });
+
+    return () => unsubscribe(); // Limpiamos el evento al cerrar la pantalla
+  }, []);
+
   const generatePassword = () => {
     let caracteresPermitidos = 'abcdefghijklmnopqrstuvwxyz';
     if (includeUppercase) caracteresPermitidos += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -34,34 +42,33 @@ export default function GeneratorPage() {
 
   return (
     <ScrollView className="flex-1 bg-slate-50">
-      {/* ENCABEZADO */}
-      <View className="px-6 pt-16 pb-8">
-        <Text className="text-3xl font-bold text-slate-900">Generador</Text>
-        <Text className="mt-1 text-slate-500">Crea contraseñas ultra seguras</Text>
+      <View className="flex-row items-center justify-between bg-white px-6 pt-14 pb-6 shadow-sm">
+        <View>
+          <Text className="text-2xl font-extrabold text-slate-900">Generador</Text>
+        </View>
+        <Ionicons
+          name={isOfflineMode ? 'cloud-offline' : 'shield-checkmark'}
+          size={24}
+          color={isOfflineMode ? '#f59e0b' : '#10b981'}
+        />
       </View>
 
       <View className="px-6">
-        {/* VISTA DE LA CONTRASEÑA GENERADA */}
-        <View className="mb-6 items-center rounded-[30px] border border-slate-100 bg-white p-6 shadow-sm">
+        <View className="mt-6 mb-6 items-center rounded-[30px] border border-slate-100 bg-white p-6 shadow-sm">
           <Text className="mb-4 text-center font-mono text-2xl text-blue-600">{password}</Text>
-          <View className="flex-row gap-x-4">
-            <TouchableOpacity onPress={copyToClipboard} className="rounded-full bg-blue-600 p-3">
-              <Ionicons name="copy-outline" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={copyToClipboard} className="rounded-full bg-blue-600 p-3">
+            <Ionicons name="copy-outline" size={24} color="white" />
+          </TouchableOpacity>
         </View>
 
-        {/* PANEL DE CONFIGURACIÓN */}
         <View className="gap-y-6 rounded-[30px] border border-slate-100 bg-white p-6 shadow-sm">
           <Text className="mb-2 text-lg font-bold text-slate-900">Configuración</Text>
-
           <FilaSelectorNumero
             label="Longitud"
             value={length}
             onPlus={() => setLength((l) => Math.min(32, l + 1))}
             onMinus={() => setLength((l) => Math.max(8, l - 1))}
           />
-
           <FilaInterruptor
             label="Mayúsculas"
             value={includeUppercase}
@@ -89,9 +96,6 @@ export default function GeneratorPage() {
   );
 }
 
-/* COMPONENTES AUXILIARES */
-
-// Fila con Switch para activar/desactivar opciones
 const FilaInterruptor = ({ label, value, onValueChange }) => (
   <View className="flex-row items-center justify-between">
     <Text className="font-medium text-slate-700">{label}</Text>
@@ -104,7 +108,6 @@ const FilaInterruptor = ({ label, value, onValueChange }) => (
   </View>
 );
 
-// Fila con botones +/- para controlar la longitud numérica
 const FilaSelectorNumero = ({ label, value, onPlus, onMinus }) => (
   <View className="flex-row items-center justify-between">
     <Text className="font-medium text-slate-700">{label}</Text>

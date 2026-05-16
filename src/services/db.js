@@ -45,7 +45,7 @@ export const initDB = () => {
 };
 
 export const syncService = {
-  // Guarda/Actualiza una sola credencial en el móvil (Evita que resuciten datos viejos)
+  // Guarda/Actualiza una sola credencial en el móvil
   saveLocalCredential: (c) => {
     db.runSync(
       `INSERT OR REPLACE INTO credentials (
@@ -60,10 +60,10 @@ export const syncService = {
         c.notes || '',
         c.username || '',
         c.url || '',
-        c.password || c.encryptedPassword || '', // Unificado
+        c.password || c.encryptedPassword || '',
         c.cardholderName || '',
-        c.cardNumber || c.encryptedCardNumber || '', // Unificado
-        c.cvv || c.encryptedCvv || '', // Unificado
+        c.cardNumber || c.encryptedCardNumber || '',
+        c.cvv || c.encryptedCvv || '',
         c.expiryDate || '',
         c.iv || 'pending',
         c.createdAt || new Date().toISOString(),
@@ -102,7 +102,7 @@ export const syncService = {
     }
   },
 
-  // ELIMINA de la tabla de visualización (Para que no se vea offline)
+  // Elimina de la tabla de visualización pero no la credencial en sí
   deleteLocalCredential: (id) => {
     db.runSync('DELETE FROM credentials WHERE id = ?', [id]);
   },
@@ -147,7 +147,7 @@ export const syncService = {
     const rows = db.getAllSync('SELECT * FROM credentials ORDER BY serviceName ASC');
     return rows.map((c) => ({
       ...c,
-      // Mapeo inverso: Aseguramos que el objeto que sale de la DB tenga los nombres que el Modal espera
+      // Con un mapeo inverso aseguro que el objeto que sale de la DB tenga los nombres que el modal espera
       cardNumber: c.encryptedCardNumber || '',
       password: c.encryptedPassword || '',
       cvv: c.encryptedCvv || '',
@@ -189,7 +189,6 @@ export const authService = {
     return db.getFirstSync('SELECT * FROM users WHERE id = ?', [id]);
   },
 
-  // --- GESTIÓN DE TOKEN ---
   getToken: async () => {
     return await SecureStore.getItemAsync('userToken');
   },
@@ -198,7 +197,6 @@ export const authService = {
     await SecureStore.setItemAsync('userToken', token);
   },
 
-  // --- GESTIÓN DE BIOMETRÍA ---
   saveBiometricPreference: async (enabled) => {
     await SecureStore.setItemAsync('useBiometrics', enabled ? 'true' : 'false');
   },
@@ -209,7 +207,6 @@ export const authService = {
     return res === 'true';
   },
 
-  // --- CIERRE DE SESIÓN ---
   logout: async () => {
     db.runSync('DELETE FROM users');
     db.runSync('DELETE FROM credentials');

@@ -28,7 +28,7 @@ export const useSync = () => {
           isProcessingSync = false;
           timeoutRef.current = null;
         }
-      }, 2000);
+      }, 1000);
     }
   };
 

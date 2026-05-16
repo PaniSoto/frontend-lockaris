@@ -10,7 +10,7 @@ import Login from '@/screens/Login';
 export default function Index() {
   const [appReady, setAppReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [view, setView] = useState('login'); // 'login' o 'register'
+  const [view, setView] = useState('login');
 
   useEffect(() => {
     // Inicialización centralizada
@@ -34,12 +34,10 @@ export default function Index() {
     );
   }
 
-  // Redirección si ya pasó el check de seguridad (Huella o Pass)
   if (isAuthenticated) {
     return <Redirect href="/(tabs)/vault" />;
   }
 
-  // Vistas de acceso
   return view === 'login' ? (
     <Login
       onLoginSuccess={() => setIsAuthenticated(true)}

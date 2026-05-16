@@ -132,6 +132,8 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                       <TextInput
                         className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                         autoCapitalize="none"
+                        placeholder='Ej: Juan Lucena'
+                        placeholderTextColor="#94a3b8"
                         value={localForm.username}
                         onChangeText={(t) => setLocalForm({ ...localForm, username: t })}
                       />
@@ -143,6 +145,8 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         <TextInput
                           className="rounded-2xl border border-slate-200 bg-slate-100 p-4 pr-24"
                           secureTextEntry={!showPassword}
+                          placeholder="••••••••"
+                          placeholderTextColor="#94a3b8"
                           value={localForm.password}
                           onChangeText={(t) => setLocalForm({ ...localForm, password: t })}
                         />
@@ -173,6 +177,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                       <TextInput
                         className="rounded-2xl border border-slate-200 bg-slate-100 p-4 uppercase"
                         placeholder="JUAN PEREZ"
+                        placeholderTextColor="#94a3b8"
                         value={localForm.cardholderName}
                         onChangeText={(t) => setLocalForm({ ...localForm, cardholderName: t })}
                       />
@@ -185,6 +190,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                         keyboardType="numeric"
                         placeholder="0000 0000 0000 0000"
+                        placeholderTextColor="#94a3b8"
                         maxLength={19}
                         value={localForm.cardNumber}
                         onChangeText={(t) =>
@@ -199,6 +205,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         <TextInput
                           className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                           placeholder="MM/AA"
+                          placeholderTextColor="#94a3b8"
                           keyboardType="numeric"
                           maxLength={5}
                           value={localForm.expiryDate}
@@ -231,6 +238,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         <TextInput
                           className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
                           secureTextEntry
+                          placeholderTextColor="#94a3b8"
                           keyboardType="numeric"
                           maxLength={4}
                           placeholder="123"

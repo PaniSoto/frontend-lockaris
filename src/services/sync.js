@@ -2,14 +2,12 @@ import api from './api';
 import { syncService } from './db';
 import NetInfo from '@react-native-community/netinfo';
 
-// valida conectividad real antes de disparar las peticiones
 const revisarConexion = async () => {
   const state = await NetInfo.fetch();
   console.log('Estado de la conexión:', state);
   return state.isInternetReachable;
 };
 
-// Lógica de guardado al crear o actualizar
 export const saveCredential = async (credential) => {
   try {
     const isUpdate = !!credential.id;
@@ -34,7 +32,6 @@ export const saveCredential = async (credential) => {
         });
       }
     } else {
-      // Lógica de CREATE (POST)
       const { ...payload } = credential;
       response = await api.post('/api/credentials', payload);
       if (response.data) {
@@ -43,7 +40,6 @@ export const saveCredential = async (credential) => {
     }
     return response.data;
   } catch (error) {
-    // Lógica de encolado offline que ya tienes...
     if (error.message === 'Sin conexión' || error.isOffline) {
       syncService.updateCredentialLocal({ ...credential, offline: true });
       syncService.queueAction(credential, credential.id ? 'UPDATE' : 'CREATE');

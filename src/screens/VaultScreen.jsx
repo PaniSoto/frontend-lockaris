@@ -25,16 +25,14 @@ const VaultScreen = () => {
   const [selectedCredential, setSelectedCredential] = useState(null);
   const deletedIdsRef = useRef(new Set());
 
-  // --- RECARGA DE DATOS ---
   const fetchCredentials = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) setRefreshing(true);
 
-      // 1. Carga inmediata desde SQLite (UX instantánea)
+      // Carga inmediata desde SQLite
       const localData = syncService.getLocalCredentials();
       setCredentials([...localData]);
 
-      // 2. Intento de sincronización si hay red
       const state = await NetInfo.fetch();
       if (state.isConnected && state.isInternetReachable) {
         const { data } = await api.get('/api/credentials');
@@ -52,7 +50,6 @@ const VaultScreen = () => {
     }
   }, []);
 
-  // --- EFECTOS ---
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       setIsOfflineMode(!(state.isConnected && state.isInternetReachable));
@@ -65,7 +62,6 @@ const VaultScreen = () => {
     };
   }, [fetchCredentials]);
 
-  // --- MANEJADORES ---
   const handleAction = async (type, data) => {
     if (type === 'CREATE') {
       // 1. Crear el objeto con ID temporal y el tipo correcto
@@ -76,22 +72,22 @@ const VaultScreen = () => {
         createdAt: new Date().toISOString(),
       };
 
-      // 2. Actualizar la interfaz de inmediato (Optimistic UI)
+      // Actualiza la interfaz de inmediato
       setCredentials((prev) => [newItem, ...prev]);
       setUi((prev) => ({ ...prev, addModalVisible: false }));
 
       // 3. GUARDADO LOCAL OBLIGATORIO
-      // Esto asegura que si cierras la app sin conexión, el dato no se pierda
+      // Se asegura de que si cierras la app sin conexión, el dato no se pierda
       syncService.saveLocalCredential(newItem);
 
       try {
-        // 4. Intentar guardado en la nube
+        // Se intenta guardar en la nube
         await saveCredential({ ...data, type: ui.itemType });
 
-        // Si tiene éxito, refrescamos para cambiar el ID 'temp' por el de la DB
+        // Si tiene éxito, se refresca para cambiar el ID 'temp' por el de la DB
         fetchCredentials(true);
       } catch (e) {
-        // 5. Si falla la red, registramos la acción en la cola de pendientes
+        // 5. Si falla la red, se registra la acción en la cola de pendientes
         syncService.queueAction(newItem, 'CREATE');
 
         Alert.alert(
@@ -108,13 +104,9 @@ const VaultScreen = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {/* Header */}
       <View className="flex-row items-center justify-between bg-white px-6 pt-14 pb-6 shadow-sm">
         <View>
-          <Text className="text-[10px] font-bold tracking-[2px] text-slate-400 uppercase">
-            Mi Bóveda
-          </Text>
-          <Text className="text-2xl font-extrabold text-slate-900">Lockaris</Text>
+          <Text className="text-2xl font-extrabold text-slate-900">Bóveda</Text>
         </View>
         <Ionicons
           name={isOfflineMode ? 'cloud-offline' : 'shield-checkmark'}
@@ -131,7 +123,6 @@ const VaultScreen = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchCredentials} />}
       />
 
-      {/* FAB & Menu */}
       {ui.menuOpen && (
         <FloatingMenu
           onSelect={(type) =>
@@ -174,7 +165,6 @@ const VaultScreen = () => {
   );
 };
 
-// --- SUB-COMPONENTES AUXILIARES ---
 const VaultItem = ({ item, onPress }) => {
   const config = {
     CARD: { icon: 'card-outline', color: '#10b981', bg: 'bg-emerald-50' },

@@ -20,7 +20,6 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
   const [status, setStatus] = useState({ loading: false, error: '' });
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- LÓGICA DE BIOMETRÍA ---
   const handleBiometricAuth = useCallback(async () => {
     try {
       const { success } = await LocalAuthentication.authenticateAsync({
@@ -31,7 +30,7 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
 
       let token = await authService.getToken();
 
-      // Reintento optimizado si el SecureStore está ocupado
+      // Se vuelve a intentar obtener el token por si la sesión expiró mientras se autenticaba con biometría
       if (!token) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         token = await authService.getToken();
@@ -45,7 +44,6 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
     }
   }, [onLoginSuccess]);
 
-  // --- LÓGICA DE LOGIN MANUAL ---
   const handleLogin = async () => {
     const { email, password } = form;
     if (!email.trim() || !password.trim()) {
@@ -88,7 +86,6 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-slate-50">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
-        {/* Header */}
         <View className="mb-8 items-center">
           <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
             <Ionicons name="shield-checkmark" size={32} color="white" />
@@ -97,7 +94,6 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
           <Text className="text-slate-500">Bóveda Segura</Text>
         </View>
 
-        {/* Formulario */}
         <View className="rounded-[40px] bg-white p-7 shadow-2xl shadow-slate-200">
           {status.error ? (
             <View className="mb-5 flex-row items-center rounded-xl bg-red-50 p-3.5">
@@ -111,6 +107,7 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
               label="Email"
               icon="mail-outline"
               placeholder="nombre@ejemplo.com"
+              placeholderTextColor="#94a3b8"
               value={form.email}
               onChangeText={(t) => setForm({ ...form, email: t })}
             />
@@ -119,6 +116,7 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
               label="Contraseña"
               icon="lock-closed-outline"
               placeholder="••••••••"
+              placeholderTextColor="#94a3b8"
               secureTextEntry={!showPassword}
               value={form.password}
               onChangeText={(t) => setForm({ ...form, password: t })}
