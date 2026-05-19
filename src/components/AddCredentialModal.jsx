@@ -175,8 +175,8 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         Nombre en Tarjeta *
                       </Text>
                       <TextInput
-                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4 uppercase"
-                        placeholder="JUAN PEREZ"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
+                        placeholder="Juan Lucena"
                         placeholderTextColor="#94a3b8"
                         value={localForm.cardholderName}
                         onChangeText={(t) => setLocalForm({ ...localForm, cardholderName: t })}

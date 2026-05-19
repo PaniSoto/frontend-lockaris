@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
@@ -87,12 +88,17 @@ const Login = ({ onLoginSuccess, onGoToRegister }) => {
       className="flex-1 bg-slate-50">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View className="mb-8 items-center">
-          <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
-            <Ionicons name="shield-checkmark" size={32} color="white" />
-          </View>
-          <Text className="text-3xl font-bold text-slate-900">Lockaris</Text>
-          <Text className="text-slate-500">Bóveda Segura</Text>
-        </View>
+  {/* El contenedor ahora es invisible y solo sirve para dar separación */}
+  <View className="mb-1">
+    <Image 
+      source={require('../../assets/icon.png')} 
+      className="h-30 w-30" // Le damos el tamaño de 16x16 directamente a la imagen
+      resizeMode="contain"  // 'contain' asegura que se vea el logo entero y transparente
+    />
+  </View>
+  <Text className="text-3xl font-bold text-slate-900">Lockaris</Text>
+  <Text className="text-slate-500">Bóveda Segura</Text>
+</View>
 
         <View className="rounded-[40px] bg-white p-7 shadow-2xl shadow-slate-200">
           {status.error ? (

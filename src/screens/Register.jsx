@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
@@ -8,14 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/services/api';
+import CustomAlert from '@/components/CustomAlert';
 
 const Register = ({ onBackToLogin }) => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [status, setStatus] = useState({ loading: false, error: '', showPassword: false });
+  const [alertVisible, setAlertVisible] = useState(false);
 
   const handleRegister = async () => {
     if (!form.name || !form.email || !form.password)
@@ -29,9 +31,8 @@ const Register = ({ onBackToLogin }) => {
         password: form.password,
       });
 
-      Alert.alert('¡Éxito!', 'Cuenta creada correctamente', [
-        { text: 'Ir al Login', onPress: onBackToLogin },
-      ]);
+      setStatus((prev) => ({ ...prev, loading: false }));
+      setAlertVisible(true);
     } catch (err) {
       setStatus({
         ...status,
@@ -47,15 +48,19 @@ const Register = ({ onBackToLogin }) => {
       className="flex-1 bg-slate-50">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View className="mb-8 items-center">
-          <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
-            <Ionicons name="person-add" size={30} color="white" />
-          </View>
+          <View className="mb-1">
+              <Image 
+                source={require('../../assets/icon.png')} 
+                className="h-30 w-30"
+                resizeMode="contain"
+              />
+            </View>
           <Text className="text-3xl font-bold text-slate-900">Nuevo Usuario</Text>
         </View>
 
         <View className="rounded-[40px] bg-white p-7 shadow-2xl shadow-slate-200">
           {status.error && (
-            <View className="mb-5 flex-row items-center rounded-xl bg-red-50 p-3">
+            <View className="mb-5 flex-row items-center rounded-xl bg-red-50 p-3.5">
               <Ionicons name="alert-circle" size={20} color="#b91c1c" />
               <Text className="ml-2 text-xs text-red-700">{status.error}</Text>
             </View>
@@ -68,6 +73,7 @@ const Register = ({ onBackToLogin }) => {
               value={form.name}
               onChangeText={(t) => setForm({ ...form, name: t })}
               placeholder="Tu nombre"
+              placeholderTextColor="#94a3b8"
             />
             <RegInput
               label="Email"
@@ -76,6 +82,7 @@ const Register = ({ onBackToLogin }) => {
               onChangeText={(t) => setForm({ ...form, email: t })}
               placeholder="correo@ejemplo.com"
               keyboardType="email-address"
+              placeholderTextColor="#94a3b8"
             />
             <RegInput
               label="Contraseña"
@@ -84,6 +91,7 @@ const Register = ({ onBackToLogin }) => {
               onChangeText={(t) => setForm({ ...form, password: t })}
               secureTextEntry={!status.showPassword}
               placeholder="Mínimo 8 caracteres"
+              placeholderTextColor="#94a3b8"
               isPassword
               toggle={() => setStatus({ ...status, showPassword: !status.showPassword })}
               showPassword={status.showPassword}
@@ -108,6 +116,19 @@ const Register = ({ onBackToLogin }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Alerta personalizada perfectamente integrada */}
+      <CustomAlert
+        visible={alertVisible}
+        title="¡Cuenta Creada!"
+        message="Tu cuenta ha sido creada exitosamente. Ya puedes acceder con tus credenciales."
+        type="success"
+        confirmText="Ir al Login"
+        onConfirm={() => {
+          setAlertVisible(false);
+          onBackToLogin();
+        }}
+      />
     </KeyboardAvoidingView>
   );
 };

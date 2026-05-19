@@ -177,7 +177,7 @@ export default function ViewCredentialModal({
 
     return (
       <View className="mb-4">
-        <Text className="mb-1 ml-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+        <Text className="mb-1 ml-1 text-[10px] font-bold tracking-widest text-slate-400">
           {label}
         </Text>
         <View
