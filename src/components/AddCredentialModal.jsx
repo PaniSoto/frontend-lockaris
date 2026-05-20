@@ -130,7 +130,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                     <View>
                       <Text className="mb-2 ml-1 font-semibold text-slate-600">Usuario *</Text>
                       <TextInput
-                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900"
                         autoCapitalize="none"
                         placeholder='Ej: Juan Lucena'
                         placeholderTextColor="#94a3b8"
@@ -143,7 +143,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                       <Text className="mb-2 ml-1 font-semibold text-slate-600">Contraseña *</Text>
                       <View className="relative justify-center">
                         <TextInput
-                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4 pr-24"
+                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4 pr-24 text-slate-900"
                           secureTextEntry={!showPassword}
                           placeholder="••••••••"
                           placeholderTextColor="#94a3b8"
@@ -175,7 +175,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         Nombre en Tarjeta *
                       </Text>
                       <TextInput
-                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900"
                         placeholder="Juan Lucena"
                         placeholderTextColor="#94a3b8"
                         value={localForm.cardholderName}
@@ -187,7 +187,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                         Número de Tarjeta *
                       </Text>
                       <TextInput
-                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
+                        className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-900"
                         keyboardType="numeric"
                         placeholder="0000 0000 0000 0000"
                         placeholderTextColor="#94a3b8"
@@ -236,7 +236,7 @@ export default function AddCredentialModal({ isOpen, onClose, onSave, itemType }
                       <View className="flex-1">
                         <Text className="mb-2 ml-1 font-semibold text-slate-600">CVV *</Text>
                         <TextInput
-                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4"
+                          className="rounded-2xl border border-slate-200 bg-slate-100 p-4 text-slate-800"
                           secureTextEntry
                           placeholderTextColor="#94a3b8"
                           keyboardType="numeric"
