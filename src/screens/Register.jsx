@@ -20,8 +20,18 @@ const Register = ({ onBackToLogin }) => {
   const [alertVisible, setAlertVisible] = useState(false);
 
   const handleRegister = async () => {
+    // 1. Validar que todos los campos estén rellenos
     if (!form.name || !form.email || !form.password)
       return setStatus({ ...status, error: 'Rellena todos los campos' });
+
+    // 2. Validar requisitos de la contraseña (Mínimo 8 caracteres, 1 mayúscula y 1 símbolo)
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>_+\-*/\[\]\\`~';=@]).{8,}$/;
+    if (!passwordRegex.test(form.password)) {
+      return setStatus({
+        ...status,
+        error: 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un símbolo',
+      });
+    }
 
     setStatus({ ...status, loading: true, error: '' });
     try {
@@ -49,12 +59,12 @@ const Register = ({ onBackToLogin }) => {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
         <View className="mb-8 items-center">
           <View className="mb-1">
-              <Image 
-                source={require('../../assets/icon.png')} 
-                className="h-30 w-30"
-                resizeMode="contain"
-              />
-            </View>
+            <Image
+              source={require('../../assets/icon.png')}
+              className="h-30 w-30"
+              resizeMode="contain"
+            />
+          </View>
           <Text className="text-3xl font-bold text-slate-900">Nuevo Usuario</Text>
         </View>
 
@@ -62,7 +72,7 @@ const Register = ({ onBackToLogin }) => {
           {status.error && (
             <View className="mb-5 flex-row items-center rounded-xl bg-red-50 p-3.5">
               <Ionicons name="alert-circle" size={20} color="#b91c1c" />
-              <Text className="ml-2 text-xs text-red-700">{status.error}</Text>
+              <Text className="ml-2 flex-1 text-xs text-red-700">{status.error}</Text>
             </View>
           )}
 
@@ -90,7 +100,7 @@ const Register = ({ onBackToLogin }) => {
               value={form.password}
               onChangeText={(t) => setForm({ ...form, password: t })}
               secureTextEntry={!status.showPassword}
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Mínimo 8 carácteres"
               placeholderTextColor="#94a3b8"
               isPassword
               toggle={() => setStatus({ ...status, showPassword: !status.showPassword })}
@@ -117,7 +127,6 @@ const Register = ({ onBackToLogin }) => {
         </View>
       </ScrollView>
 
-      {/* Alerta personalizada perfectamente integrada */}
       <CustomAlert
         visible={alertVisible}
         title="¡Cuenta Creada!"
